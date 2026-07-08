@@ -11,6 +11,8 @@ public partial class AppShell : Shell
 	{
 		this.serviceProvider = serviceProvider;
 		InitializeComponent();
+		TransactionsShellContent.ContentTemplate = new DataTemplate(() =>
+			serviceProvider.GetRequiredService<TransactionsPage>());
 		ManualEntryShellContent.ContentTemplate = new DataTemplate(() =>
 			serviceProvider.GetRequiredService<ManualEntryPage>());
 		SettingsShellContent.ContentTemplate = new DataTemplate(() =>

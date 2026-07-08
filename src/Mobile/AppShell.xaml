@@ -12,8 +12,8 @@
             ContentTemplate="{DataTemplate views:DashboardPage}"
             Route="Dashboard" />
         <ShellContent
+            x:Name="TransactionsShellContent"
             Title="Transactions"
-            ContentTemplate="{DataTemplate views:TransactionsPage}"
             Route="Transactions" />
         <ShellContent
             x:Name="ManualEntryShellContent"
