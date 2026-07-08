@@ -7,6 +7,16 @@
         <VerticalStackLayout Padding="24" Spacing="16">
             <Label Text="Settings" FontSize="28" FontAttributes="Bold" />
             <Label Text="Privacy, encryption, SMS permission, backup, and export controls will live here." />
+            <Border Padding="16" StrokeShape="RoundRectangle 8">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Local data" FontSize="18" FontAttributes="Bold" />
+                    <Label Text="Delete local transactions, budgets, imports, and diagnostic remnants stored on this device." />
+                    <Button x:Name="DeleteLocalDataButton"
+                            Text="Delete local data"
+                            BackgroundColor="#B42318"
+                            Clicked="OnDeleteLocalDataClicked" />
+                </VerticalStackLayout>
+            </Border>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

@@ -1,9 +1,17 @@
-﻿namespace HasbeMaal.Mobile;
+﻿using HasbeMaal.Mobile.Views;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace HasbeMaal.Mobile;
 
 public partial class AppShell : Shell
 {
-	public AppShell()
+	private readonly IServiceProvider serviceProvider;
+
+	public AppShell(IServiceProvider serviceProvider)
 	{
+		this.serviceProvider = serviceProvider;
 		InitializeComponent();
+		SettingsShellContent.ContentTemplate = new DataTemplate(() =>
+			serviceProvider.GetRequiredService<SettingsPage>());
 	}
 }

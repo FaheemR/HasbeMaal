@@ -24,8 +24,8 @@
             ContentTemplate="{DataTemplate views:GoalsPage}"
             Route="Goals" />
         <ShellContent
+            x:Name="SettingsShellContent"
             Title="Settings"
-            ContentTemplate="{DataTemplate views:SettingsPage}"
             Route="Settings" />
     </TabBar>
 
