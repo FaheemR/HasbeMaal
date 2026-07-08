@@ -1,0 +1,94 @@
+name: Bug or privacy-sensitive report
+description: Report a defect, regression, parser issue, privacy risk, or security-adjacent concern safely.
+title: "[Bug]: "
+labels: ["bug", "privacy-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste real SMS messages, sender IDs, account numbers, card numbers, UPI IDs, phone numbers, transaction references, exported databases, backups, screenshots with financial details, secrets, tokens, signing keys, or connection strings.
+
+        Reports that include sensitive personal or financial data may be redacted or removed. Use synthetic, redacted examples only, such as `REDACTED BANK`, `XX0000`, `SYNTH001`, or `upi-id@example`.
+  - type: checkboxes
+    id: sensitive-data-check
+    attributes:
+      label: Sensitive data check
+      options:
+        - label: I removed or replaced all real SMS, account, UPI, phone, export, screenshot, token, signing key, and secret values with synthetic placeholders.
+          required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+      placeholder: Describe the defect without including real personal or financial data.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Use synthetic data and redacted placeholders only.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: sanitized-example
+    attributes:
+      label: Sanitized example data
+      description: Optional. Include only synthetic or fully redacted examples if needed to reproduce.
+      placeholder: "Example: REDACTED BANK: Rs. 123.45 debited from XX0000 at REDACTED STORE. Ref SYNTH001."
+    validations:
+      required: false
+  - type: textarea
+    id: impact
+    attributes:
+      label: Privacy, security, or financial impact
+      description: Could this expose data, store raw SMS, log sensitive values, misclassify money, or affect budgets/goals?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: List what must be true for the fix to be accepted.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation performed or expected
+      description: Add commands, tests, or manual checks. Mark anything not run.
+      placeholder: |
+        - dotnet test tests\Core.Tests\Core.Tests.csproj
+        - dotnet build src\Mobile\Mobile.csproj -f net10.0-android
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, app version, branch, device/emulator, and .NET SDK if relevant. Do not include device identifiers.
+      placeholder: Windows 11, Android emulator API 35, .NET 10 SDK
+    validations:
+      required: false

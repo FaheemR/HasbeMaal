@@ -1,0 +1,61 @@
+name: Feature request
+description: Propose a product, privacy, infrastructure, or finance-planning improvement.
+title: "[Feature]: "
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before you submit: do not paste real SMS messages, sender IDs, account numbers, card numbers, UPI IDs, phone numbers, transaction references, exported databases, backups, screenshots with financial details, secrets, tokens, signing keys, or connection strings.
+
+        Use synthetic examples only, with placeholders such as `REDACTED STORE`, `XX0000`, `SYNTH001`, or `upi-id@example`.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What user need, reliability gap, privacy concern, or workflow should this improve?
+      placeholder: Explain the outcome without including real personal or financial data.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the smallest useful version of the feature.
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy and data handling
+      description: What data would this touch, store, export, sync, log, or send outside the device?
+      placeholder: State if it uses only local deterministic data, sanitized summaries, or no user data.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that must be true before this is done.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: Which tests, builds, docs checks, or manual checks should prove the feature works?
+      placeholder: |
+        - dotnet test tests\Core.Tests\Core.Tests.csproj
+        - dotnet build src\Mobile\Mobile.csproj -f net10.0-android
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional. Note simpler local-first approaches or rejected privacy tradeoffs.
+    validations:
+      required: false

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="HasbeMaal.Mobile.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:HasbeMaal.Mobile.Views"
+    Title="HasbeMaal">
+
+    <TabBar>
+        <ShellContent
+            Title="Dashboard"
+            ContentTemplate="{DataTemplate views:DashboardPage}"
+            Route="Dashboard" />
+        <ShellContent
+            Title="Transactions"
+            ContentTemplate="{DataTemplate views:TransactionsPage}"
+            Route="Transactions" />
+        <ShellContent
+            Title="Budgets"
+            ContentTemplate="{DataTemplate views:BudgetsPage}"
+            Route="Budgets" />
+        <ShellContent
+            Title="Goals"
+            ContentTemplate="{DataTemplate views:GoalsPage}"
+            Route="Goals" />
+        <ShellContent
+            Title="Settings"
+            ContentTemplate="{DataTemplate views:SettingsPage}"
+            Route="Settings" />
+    </TabBar>
+
+</Shell>

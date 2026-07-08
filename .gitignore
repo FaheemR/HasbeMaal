@@ -1,0 +1,39 @@
+# Build outputs
+bin/
+obj/
+artifacts/
+TestResults/
+
+# IDE and local machine files
+.vs/
+.vscode/*.user
+.claude/
+*.user
+*.suo
+
+# Mobile signing and packages
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+*.apk
+*.aab
+*.ipa
+
+# Local finance data and backups
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+*.backup
+*.bak
+exports/
+local-data/
+
+# Secrets and environment files
+.env
+.env.*
+secrets.json
+appsettings.*.json
+!appsettings.example.json
