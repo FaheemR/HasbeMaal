@@ -32,7 +32,7 @@ jobs:
         run: dotnet workload restore src\Mobile\Mobile.csproj --skip-manifest-update
 
       - name: Restore Android project
-        run: dotnet restore src\Mobile\Mobile.csproj -f net10.0-android
+        run: dotnet restore src\Mobile\Mobile.csproj -p:TargetFramework=net10.0-android
 
       - name: Build Android app
         run: dotnet build src\Mobile\Mobile.csproj -f net10.0-android --no-restore
