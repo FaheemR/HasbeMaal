@@ -3,9 +3,11 @@
     <Project Path="src/Core/Core.csproj" />
     <Project Path="src/Infrastructure/Infrastructure.csproj" />
     <Project Path="src/Mobile/Mobile.csproj" />
+    <Project Path="src/Presentation/Presentation.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Core.Tests/Core.Tests.csproj" />
     <Project Path="tests/Infrastructure.Tests/Infrastructure.Tests.csproj" />
+    <Project Path="tests/Mobile.Tests/Mobile.Tests.csproj" />
   </Folder>
 </Solution>

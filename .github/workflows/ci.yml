@@ -34,6 +34,12 @@ jobs:
       - name: Test infrastructure
         run: dotnet test tests\Infrastructure.Tests\Infrastructure.Tests.csproj --no-restore --logger trx
 
+      - name: Restore mobile tests
+        run: dotnet restore tests\Mobile.Tests\Mobile.Tests.csproj
+
+      - name: Test mobile view models
+        run: dotnet test tests\Mobile.Tests\Mobile.Tests.csproj --no-restore --logger trx
+
       - name: Restore Mobile workloads
         run: dotnet workload restore src\Mobile\Mobile.csproj --skip-manifest-update
 
