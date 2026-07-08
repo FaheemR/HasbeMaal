@@ -35,4 +35,4 @@ jobs:
         run: dotnet restore src\Mobile\Mobile.csproj -p:TargetFramework=net10.0-android
 
       - name: Build Android app
-        run: dotnet build src\Mobile\Mobile.csproj -f net10.0-android --no-restore
+        run: dotnet build src\Mobile\Mobile.csproj -f net10.0-android
