@@ -16,6 +16,10 @@
             ContentTemplate="{DataTemplate views:TransactionsPage}"
             Route="Transactions" />
         <ShellContent
+            x:Name="ManualEntryShellContent"
+            Title="Add"
+            Route="ManualEntry" />
+        <ShellContent
             Title="Budgets"
             ContentTemplate="{DataTemplate views:BudgetsPage}"
             Route="Budgets" />

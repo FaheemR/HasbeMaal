@@ -33,6 +33,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<ManualTransactionEntryViewModel>();
 		builder.Services.AddTransient<DashboardPage>();
 		builder.Services.AddTransient<TransactionsPage>();
+		builder.Services.AddTransient<ManualEntryPage>();
 		builder.Services.AddTransient<BudgetsPage>();
 		builder.Services.AddTransient<GoalsPage>();
 		builder.Services.AddTransient<SettingsPage>();

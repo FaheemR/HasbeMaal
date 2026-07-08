@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HasbeMaal.Presentation.ViewModels;assembly=HasbeMaal.Presentation"
+             x:Class="HasbeMaal.Mobile.Views.ManualEntryPage"
+             x:DataType="vm:ManualTransactionEntryViewModel"
+             Title="Add Transaction">
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="16">
+            <Label Text="Add transaction" FontSize="28" FontAttributes="Bold" />
+
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Amount" />
+                <Entry Text="{Binding Amount}"
+                       Keyboard="Numeric"
+                       Placeholder="125.75" />
+                <Label Text="{Binding AmountError}" TextColor="#B42318" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Merchant or note" />
+                <Entry Text="{Binding Merchant}"
+                       Placeholder="REDACTED STORE" />
+                <Label Text="{Binding MerchantError}" TextColor="#B42318" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Category" />
+                <Entry Text="{Binding Category}"
+                       Placeholder="Groceries" />
+                <Label Text="{Binding CategoryError}" TextColor="#B42318" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Date" />
+                <DatePicker Date="{Binding OccurredOn}" />
+            </VerticalStackLayout>
+
+            <HorizontalStackLayout Spacing="12">
+                <CheckBox IsChecked="{Binding IsCredit}" />
+                <Label Text="Money received" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <Button Text="Save entry" Command="{Binding SaveCommand}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
