@@ -46,15 +46,15 @@ public sealed class FileEncryptedStore : IEncryptedStore
 
         Directory.CreateDirectory(rootDirectory);
 
-    var normalizedPartitionKey = NormalizePartitionKey(partitionKey);
-    var associatedData = Encoding.UTF8.GetBytes($"1:{normalizedPartitionKey}");
+        var normalizedPartitionKey = NormalizePartitionKey(partitionKey);
+        var associatedData = Encoding.UTF8.GetBytes($"1:{normalizedPartitionKey}");
         var plaintext = JsonSerializer.SerializeToUtf8Bytes(value, serializerOptions);
         var nonce = RandomNumberGenerator.GetBytes(NonceSizeBytes);
         var ciphertext = new byte[plaintext.Length];
         var tag = new byte[TagSizeBytes];
 
-    using var aes = new AesGcm(encryptionKey, TagSizeBytes);
-    aes.Encrypt(nonce, plaintext, ciphertext, tag, associatedData);
+        using var aes = new AesGcm(encryptionKey, TagSizeBytes);
+        aes.Encrypt(nonce, plaintext, ciphertext, tag, associatedData);
 
         Array.Clear(plaintext);
 
