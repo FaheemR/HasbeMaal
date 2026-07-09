@@ -21,7 +21,7 @@ HasbeMaal is split into small projects so privacy-sensitive and test-heavy logic
 - The MAUI app currently provides placeholder navigation pages.
 - Core currently contains domain models, parser contracts, deterministic parser scaffolding, and planning models.
 - Infrastructure currently contains storage abstractions and `FileEncryptedStore`; end-to-end transaction repository persistence is not fully wired yet.
-- Android SMS ingestion and permission flows have not been implemented yet.
+- Android SMS permission consent is available from Settings; SMS ingestion has not been implemented yet.
 
 ## Target Local MVP Data Flow
 

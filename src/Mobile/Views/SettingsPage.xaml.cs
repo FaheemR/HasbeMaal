@@ -1,15 +1,27 @@
 using HasbeMaal.Infrastructure.Persistence;
+using HasbeMaal.Presentation.ViewModels;
 
 namespace HasbeMaal.Mobile.Views;
 
 public partial class SettingsPage : ContentPage
 {
 	private readonly ILocalDataPurgeService localDataPurgeService;
+	private readonly SmsPermissionConsentViewModel viewModel;
 
-	public SettingsPage(ILocalDataPurgeService localDataPurgeService)
+	public SettingsPage(
+		ILocalDataPurgeService localDataPurgeService,
+		SmsPermissionConsentViewModel viewModel)
 	{
 		this.localDataPurgeService = localDataPurgeService;
+		this.viewModel = viewModel;
 		InitializeComponent();
+		BindingContext = viewModel;
+	}
+
+	protected override async void OnAppearing()
+	{
+		base.OnAppearing();
+		await viewModel.RefreshAsync();
 	}
 
 	private async void OnDeleteLocalDataClicked(object? sender, EventArgs e)

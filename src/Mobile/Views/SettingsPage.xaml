@@ -1,12 +1,29 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HasbeMaal.Presentation.ViewModels;assembly=HasbeMaal.Presentation"
              x:Class="HasbeMaal.Mobile.Views.SettingsPage"
+             x:DataType="vm:SmsPermissionConsentViewModel"
              Title="Settings">
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="16">
             <Label Text="Settings" FontSize="28" FontAttributes="Bold" />
-            <Label Text="Privacy, encryption, SMS permission, backup, and export controls will live here." />
+            <Label Text="Privacy and local device controls." />
+            <Border Padding="16" StrokeShape="RoundRectangle 8">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Historical SMS access" FontSize="18" FontAttributes="Bold" />
+                    <Label Text="Optional Android permission for reading existing SMS messages locally on this device. HasbeMaal does not store or transmit raw SMS. You can deny access and revoke it later from app settings." />
+                    <Label Text="{Binding StatusText}" FontAttributes="Bold" />
+                    <VerticalStackLayout Spacing="12">
+                        <Button Text="Allow SMS access"
+                                Command="{Binding RequestPermissionCommand}"
+                                IsEnabled="{Binding CanRequestPermission}" />
+                        <Button Text="Open app settings"
+                                Command="{Binding OpenAppSettingsCommand}"
+                                IsEnabled="{Binding CanOpenAppSettings}" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
             <Border Padding="16" StrokeShape="RoundRectangle 8">
                 <VerticalStackLayout Spacing="12">
                     <Label Text="Local data" FontSize="18" FontAttributes="Bold" />

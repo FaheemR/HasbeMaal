@@ -9,7 +9,7 @@ This threat model covers the Local MVP only: Android-first local transaction cap
 - Core contains deterministic transaction parsing, money, duplicate detection, and planning primitives.
 - Infrastructure contains `FileEncryptedStore` as an encrypted file storage primitive.
 - App-level transaction persistence is not fully wired to the mobile experience yet.
-- Android SMS ingestion and permission flows are not implemented yet.
+- Android SMS permission consent is implemented in Settings; SMS ingestion is not implemented yet.
 - Raw SMS storage is not enabled and must remain disabled by default.
 
 ## Assets
@@ -84,7 +84,7 @@ Raw SMS, sender identifiers, and source references should not be stored after pa
 ## Current Gaps
 
 - App-level transaction persistence is not complete.
-- Android SMS ingestion and permission UX are not implemented.
+- Android SMS permission consent is implemented in Settings; SMS ingestion is not implemented.
 - Delete, export, and purge UX are not complete.
 - Local encrypted persistence needs end-to-end repository integration tests before storing real transactions.
 - Backup, telemetry, cloud sync, and AI insights do not have approved Local MVP data flows.

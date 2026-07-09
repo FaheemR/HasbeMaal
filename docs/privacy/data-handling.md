@@ -22,7 +22,7 @@ See the [Local MVP threat model](threat-model.md) for assets, trust boundaries, 
 
 - `FileEncryptedStore` exists as an Infrastructure encrypted-file primitive.
 - App-level transaction persistence is not fully wired to the mobile experience yet.
-- Android SMS ingestion and permission flows have not been implemented yet.
+- Android SMS permission consent is implemented in Settings; SMS ingestion is not implemented yet.
 - Raw SMS storage is not enabled and must remain disabled by default.
 
 ## Telemetry Principles

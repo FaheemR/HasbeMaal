@@ -1,5 +1,6 @@
 ﻿using HasbeMaal.Core.Parsing;
 using HasbeMaal.Infrastructure.Persistence;
+using HasbeMaal.Mobile.Services;
 using HasbeMaal.Mobile.Views;
 using HasbeMaal.Presentation.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,11 +29,17 @@ public static class MauiProgram
 		builder.Services.AddSingleton<App>();
 		builder.Services.AddSingleton<AppShell>();
 		builder.Services.AddSingleton<ISmsTransactionParser, DeterministicSmsTransactionParser>();
+		#if ANDROID
+		builder.Services.AddSingleton<ISmsPermissionService, AndroidSmsPermissionService>();
+		#else
+		builder.Services.AddSingleton<ISmsPermissionService, UnsupportedSmsPermissionService>();
+		#endif
 		builder.Services.AddSingleton<ILocalDataPurgeService>(_ =>
 			new DirectoryLocalDataPurgeService(Path.Combine(FileSystem.AppDataDirectory, "local-data")));
 		builder.Services.AddTransient<ManualTransactionEntryViewModel>();
 		builder.Services.AddTransient<TransactionsViewModel>();
 		builder.Services.AddTransient<BudgetsViewModel>();
+		builder.Services.AddTransient<SmsPermissionConsentViewModel>();
 		builder.Services.AddTransient<DashboardPage>();
 		builder.Services.AddTransient<TransactionsPage>();
 		builder.Services.AddTransient<ManualEntryPage>();

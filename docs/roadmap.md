@@ -10,7 +10,7 @@
 ## Phase 2: Local MVP
 
 - Manual transaction entry.
-- Android SMS permission flow.
+- [x] Android SMS permission consent flow.
 - Encrypted local database.
 - Transaction list and monthly summaries.
 - Category budgets and cash entries.
