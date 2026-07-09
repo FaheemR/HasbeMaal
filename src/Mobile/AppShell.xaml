@@ -20,8 +20,8 @@
             Title="Add"
             Route="ManualEntry" />
         <ShellContent
+            x:Name="BudgetsShellContent"
             Title="Budgets"
-            ContentTemplate="{DataTemplate views:BudgetsPage}"
             Route="Budgets" />
         <ShellContent
             Title="Goals"

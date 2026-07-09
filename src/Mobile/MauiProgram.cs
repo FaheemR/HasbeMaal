@@ -32,6 +32,7 @@ public static class MauiProgram
 			new DirectoryLocalDataPurgeService(Path.Combine(FileSystem.AppDataDirectory, "local-data")));
 		builder.Services.AddTransient<ManualTransactionEntryViewModel>();
 		builder.Services.AddTransient<TransactionsViewModel>();
+		builder.Services.AddTransient<BudgetsViewModel>();
 		builder.Services.AddTransient<DashboardPage>();
 		builder.Services.AddTransient<TransactionsPage>();
 		builder.Services.AddTransient<ManualEntryPage>();

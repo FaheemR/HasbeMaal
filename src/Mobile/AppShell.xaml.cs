@@ -15,6 +15,8 @@ public partial class AppShell : Shell
 			serviceProvider.GetRequiredService<TransactionsPage>());
 		ManualEntryShellContent.ContentTemplate = new DataTemplate(() =>
 			serviceProvider.GetRequiredService<ManualEntryPage>());
+		BudgetsShellContent.ContentTemplate = new DataTemplate(() =>
+			serviceProvider.GetRequiredService<BudgetsPage>());
 		SettingsShellContent.ContentTemplate = new DataTemplate(() =>
 			serviceProvider.GetRequiredService<SettingsPage>());
 	}
