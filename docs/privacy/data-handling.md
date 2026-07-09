@@ -3,6 +3,7 @@
 HasbeMaal is local-first and privacy-first. The repository must never contain real personal financial data.
 
 See the [Local MVP threat model](threat-model.md) for assets, trust boundaries, current data flows, mitigations, and review triggers.
+See the [Android SMS store review notes](android-sms-store-review.md) for `READ_SMS` permission purpose, consent copy, denial/revocation behavior, and store-review data constraints.
 
 ## Data Classes
 
@@ -22,7 +23,7 @@ See the [Local MVP threat model](threat-model.md) for assets, trust boundaries, 
 
 - `FileEncryptedStore` exists as an Infrastructure encrypted-file primitive.
 - App-level transaction persistence is not fully wired to the mobile experience yet.
-- Android SMS permission consent is implemented in Settings; SMS ingestion is not implemented yet.
+- Android SMS permission consent is implemented in Settings; SMS ingestion is not implemented yet. See the [Android SMS store review notes](android-sms-store-review.md).
 - Raw SMS storage is not enabled and must remain disabled by default.
 
 ## Telemetry Principles

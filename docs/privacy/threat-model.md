@@ -4,12 +4,14 @@ Last reviewed: 2026-07-09
 
 This threat model covers the Local MVP only: Android-first local transaction capture, deterministic parsing, manual entries, encrypted local storage, monthly summaries, and category budgets. Cloud sync, cloud backup, telemetry, and AI insights are future/review-required features and must not be treated as in scope until they receive a separate privacy review.
 
+For Android `READ_SMS` permission purpose, consent copy, denial/revocation behavior, and store-review data constraints, see the [Android SMS store review notes](android-sms-store-review.md).
+
 ## Current Implementation Status
 
 - Core contains deterministic transaction parsing, money, duplicate detection, and planning primitives.
 - Infrastructure contains `FileEncryptedStore` as an encrypted file storage primitive.
 - App-level transaction persistence is not fully wired to the mobile experience yet.
-- Android SMS permission consent is implemented in Settings; SMS ingestion is not implemented yet.
+- Android SMS permission consent is implemented in Settings; SMS ingestion is not implemented yet. See the [Android SMS store review notes](android-sms-store-review.md).
 - Raw SMS storage is not enabled and must remain disabled by default.
 
 ## Assets

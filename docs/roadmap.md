@@ -37,6 +37,6 @@ Planning is intentionally separate from the Local MVP. These features should bui
 - License selection.
 - Privacy policy.
 - [x] [Threat model](privacy/threat-model.md).
-- Android SMS permission store review.
+- [x] [Android SMS permission store review](privacy/android-sms-store-review.md).
 - [x] GitHub private vulnerability reporting enabled.
 - Accessibility and localization pass.
