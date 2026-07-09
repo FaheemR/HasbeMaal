@@ -2,6 +2,8 @@
 
 HasbeMaal handles sensitive financial information. Please treat privacy and data safety issues as security issues.
 
+The Local MVP privacy and security boundaries are documented in the [Local MVP threat model](docs/privacy/threat-model.md).
+
 ## Reporting
 
 Use GitHub private vulnerability reporting for security concerns. Do not open public issues or pull requests for suspected vulnerabilities or privacy exposures.

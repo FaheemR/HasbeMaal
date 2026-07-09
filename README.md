@@ -38,6 +38,8 @@ dotnet build src\Mobile\Mobile.csproj -f net10.0-android
 
 Do not commit real SMS messages, sender IDs, account numbers, UPI IDs, phone numbers, transaction references, merchant trails, bank names tied to personal activity, exported databases, backups, screenshots containing financial data, or secrets. Use synthetic redacted fixtures only.
 
+See [data handling](docs/privacy/data-handling.md) and the [Local MVP threat model](docs/privacy/threat-model.md) for contributor-facing privacy boundaries.
+
 ## License
 
 No license has been selected yet. Until a `LICENSE` file is added, this public code is not licensed for reuse, redistribution, or derivative works.

@@ -2,6 +2,8 @@
 
 HasbeMaal is local-first and privacy-first. The repository must never contain real personal financial data.
 
+See the [Local MVP threat model](threat-model.md) for assets, trust boundaries, current data flows, mitigations, and review triggers.
+
 ## Data Classes
 
 - Public: source code, docs, synthetic fixtures, parser rules without personal examples.
@@ -15,6 +17,13 @@ HasbeMaal is local-first and privacy-first. The repository must never contain re
 - Prefer extracted structured fields over raw SMS text.
 - Hash sender IDs and source transaction references when they are needed for duplicate detection.
 - Provide export and delete controls before public release.
+
+## Current Implementation Status
+
+- `FileEncryptedStore` exists as an Infrastructure encrypted-file primitive.
+- App-level transaction persistence is not fully wired to the mobile experience yet.
+- Android SMS ingestion and permission flows have not been implemented yet.
+- Raw SMS storage is not enabled and must remain disabled by default.
 
 ## Telemetry Principles
 

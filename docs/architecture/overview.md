@@ -6,7 +6,7 @@ HasbeMaal is split into small projects so privacy-sensitive and test-heavy logic
 
 - `Mobile`: .NET MAUI app, Shell navigation, Pages, ViewModels, platform permission flows.
 - `Core`: deterministic domain logic, money types, transaction parsing, budgets, goals, forecasts.
-- `Infrastructure`: persistence, backup, and platform integration abstractions and implementations. Encrypted persistence is a target capability, not an implemented storage layer yet.
+- `Infrastructure`: persistence, backup, and platform integration abstractions and implementations. `FileEncryptedStore` exists as an encrypted-file primitive, but app-level transaction persistence is not fully wired yet.
 - `Core.Tests`: parser, budgeting, forecasting, and model tests.
 
 ## Boundaries
@@ -20,7 +20,7 @@ HasbeMaal is split into small projects so privacy-sensitive and test-heavy logic
 
 - The MAUI app currently provides placeholder navigation pages.
 - Core currently contains domain models, parser contracts, deterministic parser scaffolding, and planning models.
-- Infrastructure currently contains storage abstractions only; encrypted local persistence has not been implemented yet.
+- Infrastructure currently contains storage abstractions and `FileEncryptedStore`; end-to-end transaction repository persistence is not fully wired yet.
 - Android SMS ingestion and permission flows have not been implemented yet.
 
 ## Target Local MVP Data Flow
@@ -32,3 +32,5 @@ HasbeMaal is split into small projects so privacy-sensitive and test-heavy logic
 5. UI reads aggregates and transactions through application services.
 
 Raw SMS storage must remain disabled by default. If a future diagnostic mode stores source text, sender IDs, or transaction references, it must be explicit, encrypted, and easy to purge.
+
+See the [Local MVP threat model](../privacy/threat-model.md) for privacy assets, trust boundaries, current gaps, and review triggers.
