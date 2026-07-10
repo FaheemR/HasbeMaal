@@ -11,28 +11,39 @@ public sealed class FileEncryptedStore : IEncryptedStore
     private const int TagSizeBytes = 16;
 
     private readonly string rootDirectory;
-    private readonly byte[] encryptionKey;
-    private readonly byte[] fileNameKey;
+    private readonly IEncryptedStoreKeyProvider? keyProvider;
     private readonly JsonSerializerOptions serializerOptions;
+    private readonly SemaphoreSlim keyInitializationLock = new(1, 1);
+    private byte[]? encryptionKey;
+    private byte[]? fileNameKey;
 
     public FileEncryptedStore(
         string rootDirectory,
         ReadOnlySpan<byte> key,
         JsonSerializerOptions? serializerOptions = null)
     {
-        if (string.IsNullOrWhiteSpace(rootDirectory))
-        {
-            throw new ArgumentException("Storage directory is required.", nameof(rootDirectory));
-        }
+        var validatedRootDirectory = ValidateRootDirectory(rootDirectory);
 
         if (key.Length != KeySizeBytes)
         {
             throw new ArgumentException("Encrypted store key must be 32 bytes.", nameof(key));
         }
 
-        this.rootDirectory = rootDirectory;
+        this.rootDirectory = validatedRootDirectory;
         encryptionKey = DeriveKey(key, "HasbeMaal encrypted store content key");
         fileNameKey = DeriveKey(key, "HasbeMaal encrypted store file name key");
+        this.serializerOptions = serializerOptions ?? new JsonSerializerOptions(JsonSerializerDefaults.Web);
+    }
+
+    public FileEncryptedStore(
+        string rootDirectory,
+        IEncryptedStoreKeyProvider keyProvider,
+        JsonSerializerOptions? serializerOptions = null)
+    {
+        ArgumentNullException.ThrowIfNull(keyProvider);
+
+        this.rootDirectory = ValidateRootDirectory(rootDirectory);
+        this.keyProvider = keyProvider;
         this.serializerOptions = serializerOptions ?? new JsonSerializerOptions(JsonSerializerDefaults.Web);
     }
 
@@ -46,6 +57,7 @@ public sealed class FileEncryptedStore : IEncryptedStore
 
         Directory.CreateDirectory(rootDirectory);
 
+        var keys = await GetDerivedKeysAsync(cancellationToken).ConfigureAwait(false);
         var normalizedPartitionKey = NormalizePartitionKey(partitionKey);
         var associatedData = Encoding.UTF8.GetBytes($"1:{normalizedPartitionKey}");
         var plaintext = JsonSerializer.SerializeToUtf8Bytes(value, serializerOptions);
@@ -53,7 +65,7 @@ public sealed class FileEncryptedStore : IEncryptedStore
         var ciphertext = new byte[plaintext.Length];
         var tag = new byte[TagSizeBytes];
 
-        using var aes = new AesGcm(encryptionKey, TagSizeBytes);
+        using var aes = new AesGcm(keys.EncryptionKey, TagSizeBytes);
         aes.Encrypt(nonce, plaintext, ciphertext, tag, associatedData);
 
         Array.Clear(plaintext);
@@ -64,7 +76,7 @@ public sealed class FileEncryptedStore : IEncryptedStore
             Convert.ToBase64String(tag),
             Convert.ToBase64String(ciphertext));
 
-        await WritePayloadAsync(GetPath(normalizedPartitionKey), payload, cancellationToken)
+            await WritePayloadAsync(GetPath(normalizedPartitionKey, keys.FileNameKey), payload, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -74,8 +86,9 @@ public sealed class FileEncryptedStore : IEncryptedStore
     {
         ValidatePartitionKey(partitionKey);
 
+        var keys = await GetDerivedKeysAsync(cancellationToken).ConfigureAwait(false);
         var normalizedPartitionKey = NormalizePartitionKey(partitionKey);
-        var path = GetPath(normalizedPartitionKey);
+        var path = GetPath(normalizedPartitionKey, keys.FileNameKey);
         if (!File.Exists(path))
         {
             return default;
@@ -102,7 +115,7 @@ public sealed class FileEncryptedStore : IEncryptedStore
 
         try
         {
-            using var aes = new AesGcm(encryptionKey, TagSizeBytes);
+            using var aes = new AesGcm(keys.EncryptionKey, TagSizeBytes);
             aes.Decrypt(nonce, ciphertext, tag, plaintext, associatedData);
 
             return JsonSerializer.Deserialize<T>(plaintext, serializerOptions);
@@ -113,12 +126,62 @@ public sealed class FileEncryptedStore : IEncryptedStore
         }
     }
 
-    private string GetPath(string normalizedPartitionKey)
+    private string GetPath(string normalizedPartitionKey, byte[] currentFileNameKey)
     {
         var partitionKeyBytes = Encoding.UTF8.GetBytes(normalizedPartitionKey);
-        var partitionHash = Convert.ToHexString(HMACSHA256.HashData(fileNameKey, partitionKeyBytes));
+        var partitionHash = Convert.ToHexString(HMACSHA256.HashData(currentFileNameKey, partitionKeyBytes));
 
         return Path.Combine(rootDirectory, $"{partitionHash}.json");
+    }
+
+    private async ValueTask<DerivedKeys> GetDerivedKeysAsync(CancellationToken cancellationToken)
+    {
+        if (encryptionKey is { } currentEncryptionKey && fileNameKey is { } currentFileNameKey)
+        {
+            return new DerivedKeys(currentEncryptionKey, currentFileNameKey);
+        }
+
+        if (keyProvider is null)
+        {
+            throw new InvalidOperationException("Encrypted store keys have not been initialized.");
+        }
+
+        await keyInitializationLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (encryptionKey is { } initializedEncryptionKey && fileNameKey is { } initializedFileNameKey)
+            {
+                return new DerivedKeys(initializedEncryptionKey, initializedFileNameKey);
+            }
+
+            byte[]? rootKey = await keyProvider.GetOrCreateKeyAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (rootKey is null || rootKey.Length != KeySizeBytes)
+                {
+                    throw new InvalidDataException("Encrypted store key provider returned an invalid key.");
+                }
+
+                var derivedEncryptionKey = DeriveKey(rootKey, "HasbeMaal encrypted store content key");
+                var derivedFileNameKey = DeriveKey(rootKey, "HasbeMaal encrypted store file name key");
+
+                encryptionKey = derivedEncryptionKey;
+                fileNameKey = derivedFileNameKey;
+
+                return new DerivedKeys(derivedEncryptionKey, derivedFileNameKey);
+            }
+            finally
+            {
+                if (rootKey is not null)
+                {
+                    Array.Clear(rootKey);
+                }
+            }
+        }
+        finally
+        {
+            keyInitializationLock.Release();
+        }
     }
 
     private async Task WritePayloadAsync(
@@ -166,6 +229,16 @@ public sealed class FileEncryptedStore : IEncryptedStore
         return HMACSHA256.HashData(key, Encoding.UTF8.GetBytes(purpose));
     }
 
+    private static string ValidateRootDirectory(string rootDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(rootDirectory))
+        {
+            throw new ArgumentException("Storage directory is required.", nameof(rootDirectory));
+        }
+
+        return rootDirectory;
+    }
+
     private static string NormalizePartitionKey(string partitionKey)
     {
         return partitionKey.Trim();
@@ -178,6 +251,8 @@ public sealed class FileEncryptedStore : IEncryptedStore
             throw new ArgumentException("Partition key is required.", nameof(partitionKey));
         }
     }
+
+    private readonly record struct DerivedKeys(byte[] EncryptionKey, byte[] FileNameKey);
 
     private sealed record EncryptedPayload(
         int Version,

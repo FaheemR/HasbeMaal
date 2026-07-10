@@ -1,3 +1,4 @@
+using HasbeMaal.Core.Application;
 using HasbeMaal.Core.Domain;
 using HasbeMaal.Presentation.ViewModels;
 
@@ -9,7 +10,7 @@ public sealed class ManualTransactionEntryViewModelTests
     [TestMethod]
     public void Constructor_DefaultState_IsInvalidUntilRequiredFieldsAreEntered()
     {
-        var viewModel = new ManualTransactionEntryViewModel();
+        var viewModel = new ManualTransactionEntryViewModel(new CapturingTransactionApplicationService());
 
         Assert.IsTrue(viewModel.HasErrors);
         Assert.IsFalse(viewModel.SaveCommand.CanExecute(null));
@@ -49,11 +50,12 @@ public sealed class ManualTransactionEntryViewModelTests
     }
 
     [TestMethod]
-    public void SaveCommand_ValidDebit_CreatesManualCashTransaction()
+    public async Task SaveCommand_ValidDebit_PersistsManualCashTransaction()
     {
-        var viewModel = NewValidViewModel();
+        var applicationService = new CapturingTransactionApplicationService();
+        var viewModel = NewValidViewModel(applicationService);
 
-        viewModel.SaveCommand.Execute(null);
+        await ((AsyncRelayCommand)viewModel.SaveCommand).ExecuteAsync();
 
         Assert.IsNotNull(viewModel.LastCreatedTransaction);
         var transaction = viewModel.LastCreatedTransaction;
@@ -64,15 +66,17 @@ public sealed class ManualTransactionEntryViewModelTests
         Assert.AreEqual("REDACTED STORE", transaction.Merchant);
         Assert.AreEqual("Groceries", transaction.Category);
         Assert.IsNull(transaction.SourceReferenceHash);
+        Assert.AreEqual(1, applicationService.SaveCallCount);
+        Assert.AreSame(transaction, applicationService.SavedTransactions.Single());
     }
 
     [TestMethod]
-    public void SaveCommand_CreditToggle_CreatesCreditTransaction()
+    public async Task SaveCommand_CreditToggle_CreatesCreditTransaction()
     {
         var viewModel = NewValidViewModel();
         viewModel.IsCredit = true;
 
-        viewModel.SaveCommand.Execute(null);
+        await ((AsyncRelayCommand)viewModel.SaveCommand).ExecuteAsync();
 
         Assert.IsNotNull(viewModel.LastCreatedTransaction);
         var transaction = viewModel.LastCreatedTransaction;
@@ -80,24 +84,57 @@ public sealed class ManualTransactionEntryViewModelTests
     }
 
     [TestMethod]
-    public void SaveCommand_InvalidInput_DoesNotCreateTransaction()
+    public async Task SaveCommand_InvalidInput_DoesNotCreateOrPersistTransaction()
     {
-        var viewModel = NewValidViewModel();
+        var applicationService = new CapturingTransactionApplicationService();
+        var viewModel = NewValidViewModel(applicationService);
         viewModel.Amount = "0";
 
-        viewModel.SaveCommand.Execute(null);
+        await ((AsyncRelayCommand)viewModel.SaveCommand).ExecuteAsync();
 
         Assert.IsNull(viewModel.LastCreatedTransaction);
+        Assert.AreEqual(0, applicationService.SaveCallCount);
     }
 
-    private static ManualTransactionEntryViewModel NewValidViewModel()
+    private static ManualTransactionEntryViewModel NewValidViewModel(
+        CapturingTransactionApplicationService? applicationService = null)
     {
-        return new ManualTransactionEntryViewModel
+        return new ManualTransactionEntryViewModel(applicationService ?? new CapturingTransactionApplicationService())
         {
             Amount = "125.75",
             Merchant = "REDACTED STORE",
             Category = "Groceries",
             OccurredOn = new DateTime(2026, 7, 8)
         };
+    }
+
+    private sealed class CapturingTransactionApplicationService : ITransactionApplicationService
+    {
+        private readonly List<FinancialTransaction> savedTransactions = [];
+
+        public int SaveCallCount { get; private set; }
+
+        public IReadOnlyList<FinancialTransaction> SavedTransactions => savedTransactions;
+
+        public Task<TransactionSaveResult> SaveAsync(
+            FinancialTransaction transaction,
+            CancellationToken cancellationToken = default)
+        {
+            SaveCallCount++;
+            savedTransactions.Add(transaction);
+
+            return Task.FromResult(TransactionSaveResult.Saved(transaction));
+        }
+
+        public Task<FinancialTransaction?> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(savedTransactions.SingleOrDefault(transaction => transaction.Id == id));
+
+        public Task<IReadOnlyList<FinancialTransaction>> ListAsync(
+            DateOnly from,
+            DateOnly to,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<FinancialTransaction>>(savedTransactions);
     }
 }

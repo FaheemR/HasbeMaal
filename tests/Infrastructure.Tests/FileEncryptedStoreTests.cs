@@ -21,6 +21,23 @@ public sealed class FileEncryptedStoreTests
     }
 
     [TestMethod]
+    public async Task ProviderConstructor_SaveAndLoad_RoundTripsAndCachesDerivedKeys()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var provider = new CountingEncryptedStoreKeyProvider(
+            Enumerable.Repeat((byte)0x42, 32).ToArray());
+        var store = new FileEncryptedStore(directory.Path, provider);
+        var value = new StoredFixture("REDACTED STORE", 125.75m);
+
+        await store.SaveAsync("transactions:2026-07", value);
+        var loaded = await store.LoadAsync<StoredFixture>("transactions:2026-07");
+        await store.SaveAsync("transactions:2026-08", new StoredFixture("REDACTED SCHOOL", 450m));
+
+        Assert.AreEqual(value, loaded);
+        Assert.AreEqual(1, provider.CallCount);
+    }
+
+    [TestMethod]
     public async Task SaveAsync_DoesNotWritePlaintextValue()
     {
         using var directory = TemporaryDirectory.Create();
@@ -166,6 +183,26 @@ public sealed class FileEncryptedStoreTests
     {
         var key = Enumerable.Repeat(keyByte, 32).Select(value => (byte)value).ToArray();
         return new FileEncryptedStore(directory, key);
+    }
+
+    private sealed class CountingEncryptedStoreKeyProvider : IEncryptedStoreKeyProvider
+    {
+        private readonly byte[] key;
+
+        public CountingEncryptedStoreKeyProvider(byte[] key)
+        {
+            this.key = key.ToArray();
+        }
+
+        public int CallCount { get; private set; }
+
+        public Task<byte[]> GetOrCreateKeyAsync(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            CallCount++;
+
+            return Task.FromResult(key.ToArray());
+        }
     }
 
     private sealed record StoredFixture(string Merchant, decimal Amount);

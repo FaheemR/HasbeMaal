@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Windows.Input;
+using HasbeMaal.Core.Application;
 using HasbeMaal.Core.Domain;
 
 namespace HasbeMaal.Presentation.ViewModels;
@@ -7,6 +8,8 @@ namespace HasbeMaal.Presentation.ViewModels;
 public sealed class ManualTransactionEntryViewModel : ViewModelBase
 {
     private const string DefaultCategory = "Uncategorized";
+
+    private readonly ITransactionApplicationService transactionApplicationService;
 
     private string amount = string.Empty;
     private string merchant = string.Empty;
@@ -18,9 +21,12 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
     private string? categoryError;
     private FinancialTransaction? lastCreatedTransaction;
 
-    public ManualTransactionEntryViewModel()
+    public ManualTransactionEntryViewModel(ITransactionApplicationService transactionApplicationService)
     {
-        SaveCommand = new RelayCommand(CreateTransaction, CanSave);
+        ArgumentNullException.ThrowIfNull(transactionApplicationService);
+
+        this.transactionApplicationService = transactionApplicationService;
+        SaveCommand = new AsyncRelayCommand(SaveTransactionAsync, CanSave);
         Validate();
     }
 
@@ -113,14 +119,14 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
             : null;
 
         OnPropertyChanged(nameof(HasErrors));
-        ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
+        ((AsyncRelayCommand)SaveCommand).RaiseCanExecuteChanged();
 
         return !HasErrors;
     }
 
     private bool CanSave() => !HasErrors;
 
-    private void CreateTransaction()
+    private async Task SaveTransactionAsync()
     {
         if (!Validate())
         {
@@ -133,7 +139,7 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
             return;
         }
 
-        LastCreatedTransaction = new FinancialTransaction(
+        var transaction = new FinancialTransaction(
             Guid.NewGuid(),
             new MoneyAmount(parsedAmount.Value),
             IsCredit ? TransactionDirection.Credit : TransactionDirection.Debit,
@@ -142,6 +148,9 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
             Merchant,
             Category,
             sourceReferenceHash: null);
+
+            var saveResult = await transactionApplicationService.SaveAsync(transaction);
+            LastCreatedTransaction = saveResult.Transaction;
     }
 
     private decimal? ParseAmount()

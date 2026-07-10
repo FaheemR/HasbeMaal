@@ -1,4 +1,6 @@
-﻿using HasbeMaal.Core.Parsing;
+﻿using HasbeMaal.Core.Application;
+using HasbeMaal.Core.Domain;
+using HasbeMaal.Core.Parsing;
 using HasbeMaal.Infrastructure.Persistence;
 using HasbeMaal.Mobile.Services;
 using HasbeMaal.Mobile.Views;
@@ -34,6 +36,15 @@ public static class MauiProgram
 		#else
 		builder.Services.AddSingleton<ISmsPermissionService, UnsupportedSmsPermissionService>();
 		#endif
+		builder.Services.AddSingleton<ISecureStorage>(_ => SecureStorage.Default);
+		builder.Services.AddSingleton<IProtectedKeyValueStore, MauiSecureStorageProtectedKeyValueStore>();
+		builder.Services.AddSingleton<IEncryptedStoreKeyProvider, PlatformEncryptedStoreKeyProvider>();
+		builder.Services.AddSingleton<IEncryptedStore>(services =>
+			new FileEncryptedStore(
+				Path.Combine(FileSystem.AppDataDirectory, "local-data"),
+				services.GetRequiredService<IEncryptedStoreKeyProvider>()));
+		builder.Services.AddSingleton<ITransactionRepository, EncryptedTransactionRepository>();
+		builder.Services.AddSingleton<ITransactionApplicationService, TransactionApplicationService>();
 		builder.Services.AddSingleton<ILocalDataPurgeService>(_ =>
 			new DirectoryLocalDataPurgeService(Path.Combine(FileSystem.AppDataDirectory, "local-data")));
 		builder.Services.AddTransient<ManualTransactionEntryViewModel>();
