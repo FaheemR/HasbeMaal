@@ -11,6 +11,9 @@ public sealed class SmsImportViewModel : ViewModelBase
 {
     private const string PermissionBlockedMessage = "SMS access is required to import.";
     private const string ReadyToScanMessage = "Ready to scan.";
+    private const string ImportFailedMessage = "Import failed. Try again.";
+    private const string AcceptFailedMessage = "Could not save. Try again.";
+    private const string UndoFailedMessage = "Could not undo. Try again.";
 
     private readonly ISmsPermissionService permissionService;
     private readonly ISmsInboxReader inboxReader;
@@ -200,6 +203,10 @@ public sealed class SmsImportViewModel : ViewModelBase
             StatusText = FormatResultSummary();
             NotifyUndoStateChanged();
         }
+        catch (Exception)
+        {
+            StatusText = ImportFailedMessage;
+        }
         finally
         {
             IsScanning = false;
@@ -215,18 +222,26 @@ public sealed class SmsImportViewModel : ViewModelBase
         }
 
         var transactions = selected.Select(item => item.Transaction).ToList();
-        var saveResults = await transactionApplicationService.SaveManyAsync(transactions, cancellationToken);
 
-        foreach (var saveResult in saveResults)
+        try
         {
-            if (saveResult.Status == TransactionSaveStatus.Saved)
-            {
-                committedIds.Add(saveResult.Transaction.Id);
-            }
-        }
+            var saveResults = await transactionApplicationService.SaveManyAsync(transactions, cancellationToken);
 
-        NotifyUndoStateChanged();
-        RemoveCandidates(selected.Select(item => item.Candidate));
+            foreach (var saveResult in saveResults)
+            {
+                if (saveResult.Status == TransactionSaveStatus.Saved)
+                {
+                    committedIds.Add(saveResult.Transaction.Id);
+                }
+            }
+
+            NotifyUndoStateChanged();
+            RemoveCandidates(selected.Select(item => item.Candidate));
+        }
+        catch (Exception)
+        {
+            StatusText = AcceptFailedMessage;
+        }
     }
 
     public async Task UndoImportAsync(CancellationToken cancellationToken = default)
@@ -237,15 +252,23 @@ public sealed class SmsImportViewModel : ViewModelBase
         }
 
         var removedCount = committedIds.Count;
-        await transactionApplicationService.DeleteManyAsync(committedIds, cancellationToken);
 
-        watermark = watermarkBeforeLastImport;
-        await watermarkStore.SetAsync(watermark, cancellationToken);
+        try
+        {
+            await transactionApplicationService.DeleteManyAsync(committedIds, cancellationToken);
 
-        committedIds = [];
-        ReadyCount = 0;
-        NotifyUndoStateChanged();
-        StatusText = FormatUndoSummary(removedCount);
+            watermark = watermarkBeforeLastImport;
+            await watermarkStore.SetAsync(watermark, cancellationToken);
+
+            committedIds = [];
+            ReadyCount = 0;
+            NotifyUndoStateChanged();
+            StatusText = FormatUndoSummary(removedCount);
+        }
+        catch (Exception)
+        {
+            StatusText = UndoFailedMessage;
+        }
     }
 
     private void RejectSelected()

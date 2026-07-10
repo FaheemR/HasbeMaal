@@ -482,6 +482,78 @@ public sealed class SmsImportViewModelTests
         Assert.AreEqual(persisted, watermarkStore.Stored);
     }
 
+    [TestMethod]
+    public async Task ImportAsync_WhenReaderThrows_SurfacesSanitizedStatusAndStaysConsistent()
+    {
+        var watermarkStore = new FakeSmsImportWatermarkStore();
+        var viewModel = new SmsImportViewModel(
+            GrantedPermission(),
+            new ThrowingSmsInboxReader(),
+            new FakeSmsTransactionImporter(),
+            new CapturingTransactionApplicationService(),
+            watermarkStore);
+
+        await viewModel.ImportAsync();
+
+        Assert.AreEqual("Import failed. Try again.", viewModel.StatusText);
+        Assert.IsFalse(viewModel.IsScanning);
+        Assert.IsFalse(viewModel.HasResult);
+        Assert.IsFalse(viewModel.CanUndo);
+        Assert.IsNull(watermarkStore.Stored);
+    }
+
+    [TestMethod]
+    public async Task AcceptSelectedAsync_WhenSaveThrows_KeepsCandidatesAndSurfacesSanitizedStatus()
+    {
+        var accepted = NewCandidate("REDACTED CAFE", "Dining", 42m, Utc(2026, 7, 9), ParseConfidence.Medium);
+        var kept = NewCandidate("REDACTED STORE", "Groceries", 80m, Utc(2026, 7, 5), ParseConfidence.Low);
+        var importer = new FakeSmsTransactionImporter { Result = ReviewOnlyResult(accepted, kept) };
+        var viewModel = new SmsImportViewModel(
+            GrantedPermission(),
+            new FakeSmsInboxReader(),
+            importer,
+            new ThrowingTransactionApplicationService(),
+            new FakeSmsImportWatermarkStore());
+
+        await viewModel.ImportAsync();
+        SelectItem(viewModel, "2026 July - REDACTED CAFE");
+
+        await viewModel.AcceptSelectedAsync();
+
+        Assert.AreEqual("Could not save. Try again.", viewModel.StatusText);
+        Assert.HasCount(2, viewModel.ReviewGroups);
+        Assert.AreEqual(2, viewModel.NeedsReviewCount);
+        Assert.IsFalse(viewModel.CanUndo);
+    }
+
+    [TestMethod]
+    public async Task UndoImportAsync_WhenDeleteThrows_KeepsUndoAvailableAndSurfacesSanitizedStatus()
+    {
+        var advanced = new DateTimeOffset(2026, 7, 10, 9, 30, 0, TimeSpan.Zero);
+        var watermarkStore = new FakeSmsImportWatermarkStore();
+        var ready = NewTransaction("REDACTED SHOP", "Groceries", 100m, Utc(2026, 7, 10));
+        var importer = new FakeSmsTransactionImporter
+        {
+            Result = new SmsImportResult([ready], [], DuplicateCount: 0, IgnoredCount: 0, Watermark: advanced)
+        };
+        var viewModel = new SmsImportViewModel(
+            GrantedPermission(),
+            new FakeSmsInboxReader(),
+            importer,
+            new ThrowingTransactionApplicationService(),
+            watermarkStore);
+
+        await viewModel.ImportAsync();
+        Assert.IsTrue(viewModel.CanUndo);
+
+        await viewModel.UndoImportAsync();
+
+        Assert.AreEqual("Could not undo. Try again.", viewModel.StatusText);
+        Assert.IsTrue(viewModel.CanUndo);
+        Assert.AreEqual(1, viewModel.ReadyCount);
+        Assert.AreEqual(advanced, watermarkStore.Stored);
+    }
+
     private static SmsImportViewModel NewViewModel(
         FakeSmsPermissionService permissionService,
         FakeSmsInboxReader reader,
@@ -656,6 +728,43 @@ public sealed class SmsImportViewModelTests
             SavedTransactions.RemoveAll(transaction => targetIds.Contains(transaction.Id));
             return Task.CompletedTask;
         }
+
+        public Task<IReadOnlyList<FinancialTransaction>> ListAsync(
+            DateOnly from,
+            DateOnly to,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<FinancialTransaction>>([]);
+    }
+
+    private sealed class ThrowingSmsInboxReader : ISmsInboxReader
+    {
+        public Task<IReadOnlyList<SmsInboxMessage>> ReadAsync(
+            DateTimeOffset? since,
+            CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("read failed");
+    }
+
+    private sealed class ThrowingTransactionApplicationService : ITransactionApplicationService
+    {
+        public Task<TransactionSaveResult> SaveAsync(
+            FinancialTransaction transaction,
+            CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("save failed");
+
+        public Task<IReadOnlyList<TransactionSaveResult>> SaveManyAsync(
+            IReadOnlyList<FinancialTransaction> transactions,
+            CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("save failed");
+
+        public Task<FinancialTransaction?> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<FinancialTransaction?>(null);
+
+        public Task DeleteManyAsync(
+            IReadOnlyList<Guid> ids,
+            CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("delete failed");
 
         public Task<IReadOnlyList<FinancialTransaction>> ListAsync(
             DateOnly from,
