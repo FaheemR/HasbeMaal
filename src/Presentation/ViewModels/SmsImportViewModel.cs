@@ -214,12 +214,14 @@ public sealed class SmsImportViewModel : ViewModelBase
             return;
         }
 
-        foreach (var item in selected)
+        var transactions = selected.Select(item => item.Transaction).ToList();
+        var saveResults = await transactionApplicationService.SaveManyAsync(transactions, cancellationToken);
+
+        foreach (var saveResult in saveResults)
         {
-            var saveResult = await transactionApplicationService.SaveAsync(item.Transaction, cancellationToken);
             if (saveResult.Status == TransactionSaveStatus.Saved)
             {
-                committedIds.Add(item.Transaction.Id);
+                committedIds.Add(saveResult.Transaction.Id);
             }
         }
 

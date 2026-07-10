@@ -189,6 +189,28 @@ public sealed class ManualTransactionEntryViewModelTests
             return Task.FromResult(TransactionSaveResult.Saved(transaction));
         }
 
+        public Task<IReadOnlyList<TransactionSaveResult>> SaveManyAsync(
+            IReadOnlyList<FinancialTransaction> transactions,
+            CancellationToken cancellationToken = default)
+        {
+            var results = new List<TransactionSaveResult>(transactions.Count);
+            foreach (var transaction in transactions)
+            {
+                SaveCallCount++;
+
+                if (saveStatus == TransactionSaveStatus.DuplicateIgnored)
+                {
+                    results.Add(TransactionSaveResult.DuplicateIgnored(transaction));
+                    continue;
+                }
+
+                savedTransactions.Add(transaction);
+                results.Add(TransactionSaveResult.Saved(transaction));
+            }
+
+            return Task.FromResult<IReadOnlyList<TransactionSaveResult>>(results);
+        }
+
         public Task<FinancialTransaction?> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default) =>

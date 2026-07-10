@@ -48,6 +48,37 @@ public sealed class LoggingTransactionApplicationService : ITransactionApplicati
 		}
 	}
 
+	public async Task<IReadOnlyList<TransactionSaveResult>> SaveManyAsync(
+		IReadOnlyList<FinancialTransaction> transactions,
+		CancellationToken cancellationToken = default)
+	{
+		logger.LogDebug(
+			"HasbeMaal diagnostic Component={Component} Operation={Operation} Status=Started Count={Count}",
+			nameof(LoggingTransactionApplicationService),
+			nameof(SaveManyAsync),
+			transactions.Count);
+
+		try
+		{
+			var results = await inner.SaveManyAsync(transactions, cancellationToken).ConfigureAwait(false);
+
+			var savedCount = results.Count(result => result.Status == TransactionSaveStatus.Saved);
+			logger.LogDebug(
+				"HasbeMaal diagnostic Component={Component} Operation={Operation} Status=Succeeded SavedCount={SavedCount} TotalCount={TotalCount}",
+				nameof(LoggingTransactionApplicationService),
+				nameof(SaveManyAsync),
+				savedCount,
+				results.Count);
+
+			return results;
+		}
+		catch (Exception exception)
+		{
+			logger.LogSanitizedException(nameof(LoggingTransactionApplicationService), nameof(SaveManyAsync), exception);
+			throw;
+		}
+	}
+
 	public async Task<FinancialTransaction?> GetByIdAsync(
 		Guid id,
 		CancellationToken cancellationToken = default)

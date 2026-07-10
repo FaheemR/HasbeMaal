@@ -102,6 +102,75 @@ public sealed class TransactionApplicationServiceTests
     }
 
     [TestMethod]
+    public async Task SaveManyAsync_NullTransactions_Throws()
+    {
+        var service = new TransactionApplicationService(new FakeTransactionRepository());
+
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(
+            async () => await service.SaveManyAsync(null!));
+    }
+
+    [TestMethod]
+    public async Task SaveManyAsync_EmptyList_DoesNotTouchRepository()
+    {
+        var repository = new FakeTransactionRepository();
+        var service = new TransactionApplicationService(repository);
+
+        var results = await service.SaveManyAsync([]);
+
+        Assert.IsEmpty(results);
+        Assert.AreEqual(0, repository.ListCallCount);
+        Assert.IsEmpty(repository.SavedTransactions);
+    }
+
+    [TestMethod]
+    public async Task SaveManyAsync_UniqueTransactions_LoadsExistingOnceAndPersistsAll()
+    {
+        var repository = new FakeTransactionRepository();
+        var service = new TransactionApplicationService(repository);
+        var first = NewTransaction(Guid.NewGuid(), "HASH020");
+        var second = NewTransaction(Guid.NewGuid(), "HASH021");
+
+        var results = await service.SaveManyAsync([first, second]);
+
+        Assert.HasCount(2, results);
+        Assert.IsTrue(results.All(result => result.Status == TransactionSaveStatus.Saved));
+        Assert.AreEqual(1, repository.ListCallCount);
+        Assert.HasCount(2, repository.SavedTransactions);
+    }
+
+    [TestMethod]
+    public async Task SaveManyAsync_DuplicateOfExisting_IgnoresThatItemAndSavesRest()
+    {
+        var existing = NewTransaction(Guid.NewGuid(), "HASH022");
+        var repository = new FakeTransactionRepository([existing]);
+        var service = new TransactionApplicationService(repository);
+        var duplicate = NewTransaction(Guid.NewGuid(), "hash022");
+        var unique = NewTransaction(Guid.NewGuid(), "HASH023");
+
+        var results = await service.SaveManyAsync([duplicate, unique]);
+
+        Assert.AreEqual(TransactionSaveStatus.DuplicateIgnored, results[0].Status);
+        Assert.AreEqual(TransactionSaveStatus.Saved, results[1].Status);
+        Assert.AreSame(unique, repository.SavedTransactions.Single());
+    }
+
+    [TestMethod]
+    public async Task SaveManyAsync_DuplicateSourceReferenceHashWithinBatch_SavesOnlyFirst()
+    {
+        var repository = new FakeTransactionRepository();
+        var service = new TransactionApplicationService(repository);
+        var first = NewTransaction(Guid.NewGuid(), "HASH024");
+        var second = NewTransaction(Guid.NewGuid(), "hash024");
+
+        var results = await service.SaveManyAsync([first, second]);
+
+        Assert.AreEqual(TransactionSaveStatus.Saved, results[0].Status);
+        Assert.AreEqual(TransactionSaveStatus.DuplicateIgnored, results[1].Status);
+        Assert.AreSame(first, repository.SavedTransactions.Single());
+    }
+
+    [TestMethod]
     public async Task GetByIdAsync_DelegatesToRepository()
     {
         var transaction = NewTransaction(Guid.NewGuid(), "HASH005");

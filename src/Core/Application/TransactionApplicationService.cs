@@ -44,6 +44,59 @@ public sealed class TransactionApplicationService : ITransactionApplicationServi
         }
     }
 
+    public async Task<IReadOnlyList<TransactionSaveResult>> SaveManyAsync(
+        IReadOnlyList<FinancialTransaction> transactions,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(transactions);
+
+        if (transactions.Count == 0)
+        {
+            return [];
+        }
+
+        await saveGate.WaitAsync(cancellationToken);
+
+        try
+        {
+            // Existing transactions are loaded exactly once for the whole batch; per-item
+            // de-duplication then runs in memory against the growing accepted set. This keeps
+            // bulk review accepts linear instead of reloading the store for every item.
+            var existingTransactions = await transactionRepository.ListAsync(
+                DateOnly.MinValue,
+                DateOnly.MaxValue,
+                cancellationToken);
+
+            var deduplicated = new List<FinancialTransaction>(existingTransactions);
+            var results = new List<TransactionSaveResult>(transactions.Count);
+            var toPersist = new List<FinancialTransaction>();
+
+            foreach (var transaction in transactions)
+            {
+                if (TransactionDuplicateDetector.HasDuplicate(transaction, deduplicated))
+                {
+                    results.Add(TransactionSaveResult.DuplicateIgnored(transaction));
+                    continue;
+                }
+
+                toPersist.Add(transaction);
+                deduplicated.Add(transaction);
+                results.Add(TransactionSaveResult.Saved(transaction));
+            }
+
+            if (toPersist.Count > 0)
+            {
+                await transactionRepository.SaveManyAsync(toPersist, cancellationToken);
+            }
+
+            return results;
+        }
+        finally
+        {
+            saveGate.Release();
+        }
+    }
+
     public async Task DeleteManyAsync(
         IReadOnlyList<Guid> ids,
         CancellationToken cancellationToken = default)

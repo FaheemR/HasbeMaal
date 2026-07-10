@@ -123,6 +123,12 @@ public sealed class TransactionsViewModelTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(TransactionSaveResult.Saved(transaction));
 
+        public Task<IReadOnlyList<TransactionSaveResult>> SaveManyAsync(
+            IReadOnlyList<FinancialTransaction> transactions,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<TransactionSaveResult>>(
+                transactions.Select(TransactionSaveResult.Saved).ToList());
+
         public Task<FinancialTransaction?> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default) =>
