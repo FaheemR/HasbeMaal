@@ -11,7 +11,7 @@ namespace HasbeMaal.Core.Import;
 /// and are not persisted by this importer. Raw message bodies, senders, and references are never
 /// logged or stored.
 /// </summary>
-public sealed class SmsTransactionImporter
+public sealed class SmsTransactionImporter : ISmsTransactionImporter
 {
     private readonly ISmsTransactionParser parser;
     private readonly ITransactionRepository repository;
