@@ -16,8 +16,11 @@ public sealed class SmsImportViewModel : ViewModelBase
     private readonly ISmsInboxReader inboxReader;
     private readonly ISmsTransactionImporter importer;
     private readonly ITransactionApplicationService transactionApplicationService;
+    private readonly ISmsImportWatermarkStore watermarkStore;
 
     private DateTimeOffset? watermark;
+    private DateTimeOffset? watermarkBeforeLastImport;
+    private bool watermarkLoaded;
     private List<SmsImportReviewCandidate> pendingReview = [];
     private List<Guid> committedIds = [];
 
@@ -35,17 +38,20 @@ public sealed class SmsImportViewModel : ViewModelBase
         ISmsPermissionService permissionService,
         ISmsInboxReader inboxReader,
         ISmsTransactionImporter importer,
-        ITransactionApplicationService transactionApplicationService)
+        ITransactionApplicationService transactionApplicationService,
+        ISmsImportWatermarkStore watermarkStore)
     {
         ArgumentNullException.ThrowIfNull(permissionService);
         ArgumentNullException.ThrowIfNull(inboxReader);
         ArgumentNullException.ThrowIfNull(importer);
         ArgumentNullException.ThrowIfNull(transactionApplicationService);
+        ArgumentNullException.ThrowIfNull(watermarkStore);
 
         this.permissionService = permissionService;
         this.inboxReader = inboxReader;
         this.importer = importer;
         this.transactionApplicationService = transactionApplicationService;
+        this.watermarkStore = watermarkStore;
 
         ReviewGroups = [];
         ImportCommand = new AsyncRelayCommand(() => ImportAsync());
@@ -170,10 +176,19 @@ public sealed class SmsImportViewModel : ViewModelBase
         IsScanning = true;
         try
         {
+            if (!watermarkLoaded)
+            {
+                watermark = await watermarkStore.GetAsync(cancellationToken);
+                watermarkLoaded = true;
+            }
+
+            var previousWatermark = watermark;
             var messages = await inboxReader.ReadAsync(watermark, cancellationToken);
             var result = await importer.ImportAsync(messages, watermark, cancellationToken);
 
             watermark = result.Watermark;
+            watermarkBeforeLastImport = previousWatermark;
+            await watermarkStore.SetAsync(watermark, cancellationToken);
             ReadyCount = result.Ready.Count;
             committedIds = result.Ready.Select(transaction => transaction.Id).ToList();
             DuplicateCount = result.DuplicateCount;
@@ -221,6 +236,9 @@ public sealed class SmsImportViewModel : ViewModelBase
 
         var removedCount = committedIds.Count;
         await transactionApplicationService.DeleteManyAsync(committedIds, cancellationToken);
+
+        watermark = watermarkBeforeLastImport;
+        await watermarkStore.SetAsync(watermark, cancellationToken);
 
         committedIds = [];
         ReadyCount = 0;

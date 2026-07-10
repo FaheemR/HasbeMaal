@@ -16,7 +16,8 @@ public sealed class SmsImportViewModelTests
             null!,
             new FakeSmsInboxReader(),
             new FakeSmsTransactionImporter(),
-            new CapturingTransactionApplicationService()));
+            new CapturingTransactionApplicationService(),
+            new FakeSmsImportWatermarkStore()));
     }
 
     [TestMethod]
@@ -26,7 +27,8 @@ public sealed class SmsImportViewModelTests
             new FakeSmsPermissionService(),
             null!,
             new FakeSmsTransactionImporter(),
-            new CapturingTransactionApplicationService()));
+            new CapturingTransactionApplicationService(),
+            new FakeSmsImportWatermarkStore()));
     }
 
     [TestMethod]
@@ -36,7 +38,8 @@ public sealed class SmsImportViewModelTests
             new FakeSmsPermissionService(),
             new FakeSmsInboxReader(),
             null!,
-            new CapturingTransactionApplicationService()));
+            new CapturingTransactionApplicationService(),
+            new FakeSmsImportWatermarkStore()));
     }
 
     [TestMethod]
@@ -46,6 +49,18 @@ public sealed class SmsImportViewModelTests
             new FakeSmsPermissionService(),
             new FakeSmsInboxReader(),
             new FakeSmsTransactionImporter(),
+            null!,
+            new FakeSmsImportWatermarkStore()));
+    }
+
+    [TestMethod]
+    public void Constructor_NullWatermarkStore_Throws()
+    {
+        Assert.ThrowsExactly<ArgumentNullException>(() => new SmsImportViewModel(
+            new FakeSmsPermissionService(),
+            new FakeSmsInboxReader(),
+            new FakeSmsTransactionImporter(),
+            new CapturingTransactionApplicationService(),
             null!));
     }
 
@@ -412,12 +427,73 @@ public sealed class SmsImportViewModelTests
         Assert.IsFalse(viewModel.CanUndo);
     }
 
+    [TestMethod]
+    public async Task ImportAsync_PersistsResultWatermarkForNextSession()
+    {
+        var resultWatermark = new DateTimeOffset(2026, 7, 10, 9, 30, 0, TimeSpan.Zero);
+        var watermarkStore = new FakeSmsImportWatermarkStore();
+        var importer = new FakeSmsTransactionImporter
+        {
+            Result = new SmsImportResult([], [], DuplicateCount: 0, IgnoredCount: 0, Watermark: resultWatermark)
+        };
+        var viewModel = NewViewModel(GrantedPermission(), new FakeSmsInboxReader(), importer, watermarkStore: watermarkStore);
+
+        await viewModel.ImportAsync();
+
+        Assert.AreEqual(resultWatermark, watermarkStore.Stored);
+    }
+
+    [TestMethod]
+    public async Task ImportAsync_LoadsPersistedWatermarkOnFirstScan()
+    {
+        var persisted = new DateTimeOffset(2026, 7, 1, 0, 0, 0, TimeSpan.Zero);
+        var watermarkStore = new FakeSmsImportWatermarkStore { Stored = persisted };
+        var reader = new FakeSmsInboxReader();
+        var importer = new FakeSmsTransactionImporter
+        {
+            Result = new SmsImportResult([], [], DuplicateCount: 0, IgnoredCount: 0, Watermark: persisted)
+        };
+        var viewModel = NewViewModel(GrantedPermission(), reader, importer, watermarkStore: watermarkStore);
+
+        await viewModel.ImportAsync();
+
+        Assert.AreEqual(persisted, reader.LastSince);
+        Assert.AreEqual(persisted, importer.LastWatermark);
+    }
+
+    [TestMethod]
+    public async Task UndoImportAsync_RestoresPreviousWatermark()
+    {
+        var persisted = new DateTimeOffset(2026, 7, 1, 0, 0, 0, TimeSpan.Zero);
+        var advanced = new DateTimeOffset(2026, 7, 10, 9, 30, 0, TimeSpan.Zero);
+        var watermarkStore = new FakeSmsImportWatermarkStore { Stored = persisted };
+        var ready = NewTransaction("REDACTED SHOP", "Groceries", 100m, Utc(2026, 7, 10));
+        var importer = new FakeSmsTransactionImporter
+        {
+            Result = new SmsImportResult([ready], [], DuplicateCount: 0, IgnoredCount: 0, Watermark: advanced)
+        };
+        var viewModel = NewViewModel(GrantedPermission(), new FakeSmsInboxReader(), importer, watermarkStore: watermarkStore);
+
+        await viewModel.ImportAsync();
+        Assert.AreEqual(advanced, watermarkStore.Stored);
+
+        await viewModel.UndoImportAsync();
+
+        Assert.AreEqual(persisted, watermarkStore.Stored);
+    }
+
     private static SmsImportViewModel NewViewModel(
         FakeSmsPermissionService permissionService,
         FakeSmsInboxReader reader,
         FakeSmsTransactionImporter importer,
-        CapturingTransactionApplicationService? applicationService = null) =>
-        new(permissionService, reader, importer, applicationService ?? new CapturingTransactionApplicationService());
+        CapturingTransactionApplicationService? applicationService = null,
+        FakeSmsImportWatermarkStore? watermarkStore = null) =>
+        new(
+            permissionService,
+            reader,
+            importer,
+            applicationService ?? new CapturingTransactionApplicationService(),
+            watermarkStore ?? new FakeSmsImportWatermarkStore());
 
     private static FakeSmsPermissionService GrantedPermission() =>
         new() { CurrentState = SmsPermissionState.Granted };
@@ -518,6 +594,28 @@ public sealed class SmsImportViewModelTests
             LastMessages = messages;
             LastWatermark = watermark;
             return Task.FromResult(Result);
+        }
+    }
+
+    private sealed class FakeSmsImportWatermarkStore : ISmsImportWatermarkStore
+    {
+        public DateTimeOffset? Stored { get; set; }
+
+        public int GetCount { get; private set; }
+
+        public List<DateTimeOffset?> SetValues { get; } = [];
+
+        public Task<DateTimeOffset?> GetAsync(CancellationToken cancellationToken = default)
+        {
+            GetCount++;
+            return Task.FromResult(Stored);
+        }
+
+        public Task SetAsync(DateTimeOffset? watermark, CancellationToken cancellationToken = default)
+        {
+            Stored = watermark;
+            SetValues.Add(watermark);
+            return Task.CompletedTask;
         }
     }
 

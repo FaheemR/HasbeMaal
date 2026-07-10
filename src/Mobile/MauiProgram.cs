@@ -80,6 +80,7 @@ public static class MauiProgram
 				services.GetRequiredService<ILogger<LoggingEncryptedStore>>()));
 		builder.Services.AddSingleton<ITransactionRepository, EncryptedTransactionRepository>();
 		builder.Services.AddSingleton<IMonthlyBudgetCategoryRepository, EncryptedMonthlyBudgetCategoryRepository>();
+		builder.Services.AddSingleton<ISmsImportWatermarkStore, EncryptedSmsImportWatermarkStore>();
 		builder.Services.AddSingleton<ISmsTransactionImporter, SmsTransactionImporter>();
 		builder.Services.AddSingleton<TransactionApplicationService>();
 		builder.Services.AddSingleton<ITransactionApplicationService>(services =>
