@@ -1,37 +1,3 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Maui.MainTheme" parent="Maui.MainTheme.Base">
-        <item name="bottomNavigationViewStyle">@style/HasbeMaalBottomNavigationView</item>
-        <item name="bottomNavigationStyle">@style/HasbeMaalBottomNavigationView</item>
-        <item name="textAppearanceCaption">@style/HasbeMaalBottomNavigationTextAppearance</item>
-    </style>
-
-    <style name="Maui.MainTheme.NoActionBar" parent="Maui.MainTheme">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="windowActionModeOverlay">true</item>
-        <item name="android:actionModeBackground">?attr/colorPrimary</item>
-        <item name="android:actionModeStyle">@style/ActionMode</item>
-        <item name="bottomNavigationViewStyle">@style/HasbeMaalBottomNavigationView</item>
-        <item name="bottomNavigationStyle">@style/HasbeMaalBottomNavigationView</item>
-        <item name="textAppearanceCaption">@style/HasbeMaalBottomNavigationTextAppearance</item>
-    </style>
-
-    <style name="Maui.SplashTheme" parent="Maui.MainTheme.NoActionBar">
-        <item name="maui_splash">true</item>
-        <item name="android:windowBackground">@drawable/maui_splash</item>
-        <item name="android:windowSplashScreenBackground">@color/maui_splash_color</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/maui_splash</item>
-        <item name="bottomNavigationViewStyle">@style/HasbeMaalBottomNavigationView</item>
-        <item name="bottomNavigationStyle">@style/HasbeMaalBottomNavigationView</item>
-        <item name="textAppearanceCaption">@style/HasbeMaalBottomNavigationTextAppearance</item>
-    </style>
-
-    <style name="HasbeMaalBottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">
-        <item name="itemTextAppearanceActive">@style/HasbeMaalBottomNavigationTextAppearance</item>
-        <item name="itemTextAppearanceInactive">@style/HasbeMaalBottomNavigationTextAppearance</item>
-        <item name="itemTextAppearanceActiveBoldEnabled">true</item>
-    </style>
-
-    <style name="HasbeMaalBottomNavigationTextAppearance" parent="TextAppearance.MaterialComponents.Caption" />
 </resources>
