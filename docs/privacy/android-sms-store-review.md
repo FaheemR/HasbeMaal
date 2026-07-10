@@ -1,6 +1,6 @@
 # Android SMS Store Review Notes
 
-Last reviewed: 2026-07-09
+Last reviewed: 2026-07-10
 
 These notes document the Android `READ_SMS` permission and privacy copy for store review. They apply to the Local MVP boundary described in [Data Handling](data-handling.md) and the [Local MVP threat model](threat-model.md).
 
@@ -13,7 +13,8 @@ Current implementation status:
 - Implemented: Android declares `android.permission.READ_SMS` in `src/Mobile/Platforms/Android/AndroidManifest.xml`.
 - Implemented: Settings shows an explicit SMS permission consent section.
 - Implemented: The permission flow supports allow, denied, unsupported, and open-app-settings states.
-- Not implemented: SMS inbox ingestion, background SMS monitoring, transaction import from SMS, raw-source diagnostics, cloud sync, telemetry, AI insights, or network submission of SMS data.
+- Approved and in progress: user-initiated, foreground SMS inbox import that filters by a sender allowlist, parses locally, and stores only structured transactions. See [Approved SMS Import Flow](#approved-sms-import-flow).
+- Not implemented and not approved: background SMS monitoring, raw-source diagnostics, cloud sync, telemetry, AI insights, or any network submission of SMS data.
 
 ## Permission Purpose
 
@@ -24,7 +25,20 @@ Current implementation status:
 3. Store only structured transaction data through approved local encrypted persistence.
 4. Do not retain raw SMS text, sender identifiers, source transaction references, account hints, UPI identifiers, or phone numbers after parsing.
 
-Until SMS ingestion is implemented, the permission exists only as a consent surface. Future ingestion must keep this purpose narrow and update the threat model before implementation continues.
+SMS import is approved under the narrow purpose above and the controls in [Approved SMS Import Flow](#approved-sms-import-flow). The permission remains optional, and non-SMS workflows must continue to function when it is denied. Any change that widens this purpose, adds background access, or retains raw source data requires a new privacy review and a threat model update before implementation continues.
+
+## Approved SMS Import Flow
+
+SMS import runs only when the user opens the import flow in the foreground and starts it. The approved behavior is:
+
+- Scan scope: the full inbox is read on the first import; later imports read only messages newer than a stored watermark timestamp, so earlier messages are not re-scanned.
+- Sender allowlist: only messages from allowlisted senders are considered. The allowlist is seeded with common bank and UPI sender IDs and can be extended or reduced by the user. Sender addresses are used only to apply the allowlist and are dropped before any content is handed to local parsing. Sender addresses, phone numbers, and account hints are never stored or logged.
+- Local parsing: only the message body and its received timestamp are passed to deterministic on-device parsing. The received timestamp becomes the transaction date. A source reference, when present, is reduced to a one-way hash for duplicate detection and is never stored raw.
+- Deduplication: candidates are deduplicated against existing transactions and within the batch using the hashed reference and a composite key of amount, direction, received timestamp, and normalized merchant, combined with the watermark. Duplicates are skipped.
+- Review model: high-confidence, non-duplicate candidates are committed as structured transactions in a single user action. Lower-confidence candidates are shown for grouped, bulk review before they are committed or discarded; un-actioned candidates stay pending for a later import, subject to a cap. Imported transactions can be removed through the app's delete controls.
+- No raw retention: after import, only structured transaction fields and the watermark persist. No raw SMS text, sender identifier, phone number, account hint, UPI identifier, or raw reference is retained.
+
+Final user-facing copy for the import screens will be documented here when the import UI lands.
 
 ## Consent Copy
 
@@ -82,7 +96,7 @@ Store-review screenshots and attachments must use safe states only:
 
 ## Current Gaps
 
-- SMS ingestion is not implemented.
+- SMS import is approved under this review and is in progress; the inbox reader, batch import orchestration, dedup watermark, and import UI are not yet implemented.
 - End-to-end encrypted transaction persistence is not fully wired to the mobile experience.
 - Delete, export, and purge UX are not complete.
 - Network, cloud, telemetry, and AI flows are not approved for SMS data.

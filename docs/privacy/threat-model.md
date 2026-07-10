@@ -1,8 +1,8 @@
 # Local MVP Threat Model
 
-Last reviewed: 2026-07-09
+Last reviewed: 2026-07-10
 
-This threat model covers the Local MVP only: Android-first local transaction capture, deterministic parsing, manual entries, encrypted local storage, monthly summaries, and category budgets. Cloud sync, cloud backup, telemetry, and AI insights are future/review-required features and must not be treated as in scope until they receive a separate privacy review.
+This threat model covers the Local MVP only: Android-first local transaction capture, deterministic parsing, on-device SMS import, manual entries, encrypted local storage, monthly summaries, and category budgets. Cloud sync, cloud backup, telemetry, and AI insights are future/review-required features and must not be treated as in scope until they receive a separate privacy review.
 
 For Android `READ_SMS` permission purpose, consent copy, denial/revocation behavior, and store-review data constraints, see the [Android SMS store review notes](android-sms-store-review.md).
 
@@ -11,7 +11,7 @@ For Android `READ_SMS` permission purpose, consent copy, denial/revocation behav
 - Core contains deterministic transaction parsing, money, duplicate detection, and planning primitives.
 - Infrastructure contains `FileEncryptedStore` as an encrypted file storage primitive.
 - App-level transaction persistence is not fully wired to the mobile experience yet.
-- Android SMS permission consent is implemented in Settings; SMS ingestion is not implemented yet. See the [Android SMS store review notes](android-sms-store-review.md).
+- Android SMS permission consent is implemented in Settings. On-device SMS import is approved under this reviewed design and is being implemented as a user-initiated, foreground, allowlist-filtered flow. See the [Android SMS store review notes](android-sms-store-review.md).
 - Raw SMS storage is not enabled and must remain disabled by default.
 
 ## Assets
@@ -42,14 +42,16 @@ For Android `READ_SMS` permission purpose, consent copy, denial/revocation behav
 
 ### Local MVP Target
 
-1. User grants Android SMS access explicitly.
-2. Android platform code reads SMS content and passes only the required text to Core parser interfaces.
-3. Core returns a structured transaction candidate or no match.
-4. App services validate, deduplicate, and store structured transaction data through encrypted local persistence.
-5. UI reads structured transactions and summaries from app services.
-6. Delete and export controls operate on structured local data and any generated local artifacts.
+1. User grants Android SMS access explicitly, then starts import from the app foreground. There is no background SMS monitoring.
+2. Android platform code reads the SMS inbox (full inbox on the first import, then only messages newer than the stored watermark) and applies a sender allowlist. The allowlist is seeded with common bank and UPI sender IDs and can be extended or reduced by the user. The sender address is used only for allowlist filtering and is dropped before any content leaves the platform boundary.
+3. For each allowlisted message, Android passes only the message body and its received timestamp to Core parser interfaces. Sender identifiers, phone numbers, and account hints are never passed to Core.
+4. Core parses each message deterministically and returns a structured transaction candidate with a confidence level, or no match. The received timestamp becomes the transaction date; a source reference, when present, is reduced to a one-way hash and never stored raw.
+5. App services deduplicate the batch against existing transactions and within the batch using two keys: the hashed source reference and a composite key of amount, direction, received timestamp (minute granularity), and normalized merchant. Duplicates are skipped.
+6. High-confidence, non-duplicate candidates are committed to encrypted local persistence in a single user action. Lower-confidence candidates are surfaced for grouped, bulk review before they are committed or discarded; un-actioned candidates remain pending for a later import, subject to a cap.
+7. After a successful import, the watermark advances to the newest processed message so re-running import does not re-scan or re-import earlier messages.
+8. UI reads structured transactions and summaries from app services. Delete and export controls operate on structured local data and any generated local artifacts.
 
-Raw SMS, sender identifiers, and source references should not be stored after parsing unless a future diagnostic mode is explicitly reviewed, encrypted, time-limited, and purgeable.
+Raw SMS text, sender identifiers, phone numbers, account hints, and raw source references are not stored after parsing. Only structured transaction fields and the stored import watermark persist. Any future raw-source diagnostic mode must be separately reviewed, encrypted, time-limited, and purgeable.
 
 ### Future, Review-Required
 
@@ -80,13 +82,17 @@ Raw SMS, sender identifiers, and source references should not be stored after pa
 | Logs, telemetry, or crash reports include sensitive values | Sensitive data leaves the local trust boundary | Do not log raw SMS, sender identifiers, account hints, transaction references, merchant names from user data, UPI identifiers, phone numbers, or exact transaction trails. |
 | SMS permission flow is unclear or too broad | Users may grant access without understanding local processing | Request permission only when needed, explain local processing in UI, support denial, and avoid background access beyond the Local MVP need. |
 | Parser misclassification or duplicate failures corrupt summaries | Budgets and summaries become misleading | Keep parser deterministic, maintain synthetic coverage, preserve confidence scoring, and run focused Core tests after parser changes. |
+| Sender address or raw SMS crosses the platform boundary into Core, logs, or storage | PII leaks beyond the minimal message-body and timestamp contract | Filter by sender on the Android side, drop the address before calling Core, pass only the message body and received timestamp, and keep raw SMS and identifiers out of logs and persistence. |
+| High-confidence candidates auto-commit misclassified transactions | Budgets and summaries silently include wrong data | Auto-commit only High-confidence, non-duplicate candidates, route Medium and Low confidence to explicit bulk review, keep parsing deterministic with synthetic coverage, and provide an undo path for imported transactions. |
+| Dedup keys miss or over-match during import | Duplicate transactions are stored, or genuine distinct transactions are dropped | Deduplicate with both the hashed reference and a composite key that includes minute-level timestamp, combine with the import watermark, and cover re-import idempotency and same-merchant same-day cases with tests. |
+| Full-inbox scan mishandles large inboxes | UI stalls or memory pressure during the first import | Read the inbox in bounded pages off the UI thread, build dedup indexes once per batch instead of per-item full scans, and report scan progress. |
 | Delete, export, or purge flows miss local artifacts | User cannot reliably remove or control sensitive data | Track persisted artifacts, implement delete/export before public release, and include encrypted store files, indexes, and backups in purge tests. |
 | Future cloud, telemetry, or AI features reuse Local MVP assumptions | Data crosses network boundaries without consent and retention controls | Treat all networked features as future/review-required and document consent, retention, deletion, export, failure modes, and sanitized payload rules before implementation. |
 
 ## Current Gaps
 
 - App-level transaction persistence is not complete.
-- Android SMS permission consent is implemented in Settings; SMS ingestion is not implemented.
+- Android SMS permission consent is implemented in Settings; SMS import is approved under this reviewed design and is in progress. The inbox reader, batch import orchestration, dedup watermark, and import UI are not yet implemented.
 - Delete, export, and purge UX are not complete.
 - Local encrypted persistence needs end-to-end repository integration tests before storing real transactions.
 - Backup, telemetry, cloud sync, and AI insights do not have approved Local MVP data flows.
