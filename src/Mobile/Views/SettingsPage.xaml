@@ -4,15 +4,17 @@
              xmlns:vm="clr-namespace:HasbeMaal.Presentation.ViewModels;assembly=HasbeMaal.Presentation"
              x:Class="HasbeMaal.Mobile.Views.SettingsPage"
              x:DataType="vm:SmsPermissionConsentViewModel"
+             SafeAreaEdges="Container, Container, Container, SoftInput"
              Title="Settings">
     <ScrollView>
         <VerticalStackLayout Style="{StaticResource PageContentLayout}">
             <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
+                <Label Text="DEVICE CONTROLS" Style="{StaticResource EyebrowLabel}" />
                 <Label Text="Settings" Style="{StaticResource PageTitle}" />
                 <Label Text="Privacy and local device controls." Style="{StaticResource PageSubtitle}" />
             </VerticalStackLayout>
 
-            <Border Style="{StaticResource CardBorder}">
+            <Border Style="{StaticResource HeroCardBorder}">
                 <VerticalStackLayout Style="{StaticResource CardContentLayout}" Spacing="12">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                         <Label Text="Historical SMS access" Style="{StaticResource SectionTitle}" />
@@ -22,6 +24,17 @@
                         </Border>
                     </Grid>
                     <Label Text="Optional Android permission for reading existing SMS messages locally on this device. HasbeMaal does not store or transmit raw SMS. You can deny access and revoke it later from app settings." Style="{StaticResource MutedLabel}" />
+                    <Border Style="{StaticResource LoadingStateBorder}"
+                            IsVisible="{Binding IsBusy}">
+                        <HorizontalStackLayout Spacing="12">
+                            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                               VerticalOptions="Center" />
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="Checking device permission" Style="{StaticResource ChipLabel}" />
+                                <Label Text="Reading Android permission state locally." Style="{StaticResource MutedLabel}" />
+                            </VerticalStackLayout>
+                        </HorizontalStackLayout>
+                    </Border>
                     <VerticalStackLayout Spacing="10">
                         <Button Text="Allow SMS access"
                                 Command="{Binding RequestPermissionCommand}"
@@ -36,6 +49,7 @@
 
             <Border Style="{StaticResource CardBorder}">
                 <VerticalStackLayout Style="{StaticResource CardContentLayout}" Spacing="12">
+                    <Label Text="RETENTION" Style="{StaticResource EyebrowLabel}" />
                     <Label Text="Local data" Style="{StaticResource SectionTitle}" />
                     <Label Text="Delete local transactions, budgets, imports, and diagnostic remnants stored on this device." Style="{StaticResource MutedLabel}" />
                     <Button x:Name="DeleteLocalDataButton"

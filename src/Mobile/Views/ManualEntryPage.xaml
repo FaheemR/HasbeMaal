@@ -4,10 +4,12 @@
              xmlns:vm="clr-namespace:HasbeMaal.Presentation.ViewModels;assembly=HasbeMaal.Presentation"
              x:Class="HasbeMaal.Mobile.Views.ManualEntryPage"
              x:DataType="vm:ManualTransactionEntryViewModel"
+             SafeAreaEdges="Container, Container, Container, SoftInput"
              Title="Add Transaction">
     <ScrollView>
         <VerticalStackLayout Style="{StaticResource PageContentLayout}">
             <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
+                <Label Text="MANUAL ENTRY" Style="{StaticResource EyebrowLabel}" />
                 <Label Text="Add transaction" Style="{StaticResource PageTitle}" />
                 <Label Text="Create a structured entry without storing raw message content." Style="{StaticResource PageSubtitle}" />
             </VerticalStackLayout>
@@ -16,29 +18,43 @@
                 <VerticalStackLayout Style="{StaticResource CardContentLayout}" Spacing="16">
                     <VerticalStackLayout Spacing="6">
                         <Label Text="Amount" Style="{StaticResource FieldLabel}" />
-                        <Entry Text="{Binding Amount}"
-                               Keyboard="Numeric"
-                               Placeholder="Amount" />
-                        <Label Text="{Binding AmountError}" Style="{StaticResource ErrorLabel}" />
+                        <Border Style="{StaticResource InputChromeBorder}">
+                            <Entry Text="{Binding Amount}"
+                                   Keyboard="Numeric"
+                                   Placeholder="Amount" />
+                        </Border>
+                           <Label Text="{Binding AmountError}"
+                               Style="{StaticResource ErrorLabel}"
+                               IsVisible="{Binding HasAmountError}" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="6">
                         <Label Text="Merchant or note" Style="{StaticResource FieldLabel}" />
-                        <Entry Text="{Binding Merchant}"
-                               Placeholder="Merchant or note" />
-                        <Label Text="{Binding MerchantError}" Style="{StaticResource ErrorLabel}" />
+                        <Border Style="{StaticResource InputChromeBorder}">
+                            <Entry Text="{Binding Merchant}"
+                                   Placeholder="Merchant or note" />
+                        </Border>
+                           <Label Text="{Binding MerchantError}"
+                               Style="{StaticResource ErrorLabel}"
+                               IsVisible="{Binding HasMerchantError}" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="6">
                         <Label Text="Category" Style="{StaticResource FieldLabel}" />
-                        <Entry Text="{Binding Category}"
-                               Placeholder="Category" />
-                        <Label Text="{Binding CategoryError}" Style="{StaticResource ErrorLabel}" />
+                        <Border Style="{StaticResource InputChromeBorder}">
+                            <Entry Text="{Binding Category}"
+                                   Placeholder="Category" />
+                        </Border>
+                           <Label Text="{Binding CategoryError}"
+                               Style="{StaticResource ErrorLabel}"
+                               IsVisible="{Binding HasCategoryError}" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="6">
                         <Label Text="Date" Style="{StaticResource FieldLabel}" />
-                        <DatePicker Date="{Binding OccurredOn}" />
+                        <Border Style="{StaticResource InputChromeBorder}">
+                            <DatePicker Date="{Binding OccurredOn}" />
+                        </Border>
                     </VerticalStackLayout>
 
                     <Border Style="{StaticResource InsetPanelBorder}">
@@ -48,6 +64,18 @@
                         </HorizontalStackLayout>
                     </Border>
                 </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource LoadingStateBorder}"
+                    IsVisible="{Binding IsSaving}">
+                <HorizontalStackLayout Spacing="12">
+                    <ActivityIndicator IsRunning="{Binding IsSaving}"
+                                       VerticalOptions="Center" />
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Saving local entry" Style="{StaticResource ChipLabel}" />
+                        <Label Text="Writing structured data without raw message content." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
             </Border>
 
             <Button Text="Save entry" Command="{Binding SaveCommand}" />

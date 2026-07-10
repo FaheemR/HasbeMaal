@@ -2,42 +2,55 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="HasbeMaal.Mobile.Views.GoalsPage"
+             SafeAreaEdges="Container, Container, Container, SoftInput"
              Title="Goals">
     <ScrollView>
         <VerticalStackLayout Style="{StaticResource PageContentLayout}">
             <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
+                <Label Text="SCENARIOS" Style="{StaticResource EyebrowLabel}" />
                 <Label Text="Goals" Style="{StaticResource PageTitle}" />
                 <Label Text="Longer-horizon planning without mixing it into daily spending." Style="{StaticResource PageSubtitle}" />
             </VerticalStackLayout>
 
-            <Border Style="{StaticResource EmptyStateBorder}">
-                <VerticalStackLayout Style="{StaticResource EmptyStateLayout}">
+            <Border Style="{StaticResource HeroCardBorder}">
+                <VerticalStackLayout Spacing="14">
+                    <Label Text="GOAL OPERATING ROOM" Style="{StaticResource EyebrowLabel}" />
                     <Label Text="No goals yet" Style="{StaticResource SectionTitle}" />
                     <Label Text="Emergency fund, education, family support, and long-term scenarios will be tracked here." Style="{StaticResource MutedLabel}" />
+                    <Border Style="{StaticResource GlassPanelBorder}">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Private by design" Style="{StaticResource ChipLabel}" />
+                            <Label Text="Goals will use local summaries and app-defined categories, not raw transaction trails." Style="{StaticResource MutedLabel}" />
+                        </VerticalStackLayout>
+                    </Border>
                 </VerticalStackLayout>
             </Border>
 
             <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*" RowSpacing="12" ColumnSpacing="12">
-                <Border Style="{StaticResource CardBorder}">
+                <Border Style="{StaticResource GlassPanelBorder}">
                     <VerticalStackLayout Spacing="8">
+                        <Label Text="RESERVE" Style="{StaticResource EyebrowLabel}" />
                         <Label Text="Emergency fund" Style="{StaticResource SectionTitle}" />
                         <Label Text="Reserve planning" Style="{StaticResource ChipLabel}" />
                     </VerticalStackLayout>
                 </Border>
                 <Border Grid.Column="1" Style="{StaticResource CardBorder}">
                     <VerticalStackLayout Spacing="8">
+                        <Label Text="FUTURE" Style="{StaticResource EyebrowLabel}" />
                         <Label Text="Education" Style="{StaticResource SectionTitle}" />
                         <Label Text="Future expenses" Style="{StaticResource ChipLabel}" />
                     </VerticalStackLayout>
                 </Border>
-                <Border Grid.Row="1" Style="{StaticResource CardBorder}">
+                <Border Grid.Row="1" Style="{StaticResource AccentPanelBorder}">
                     <VerticalStackLayout Spacing="8">
+                        <Label Text="FAMILY" Style="{StaticResource EyebrowLabel}" />
                         <Label Text="Family support" Style="{StaticResource SectionTitle}" />
                         <Label Text="Recurring help" Style="{StaticResource ChipLabel}" />
                     </VerticalStackLayout>
                 </Border>
-                <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardBorder}">
+                <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource GlassPanelBorder}">
                     <VerticalStackLayout Spacing="8">
+                        <Label Text="HORIZON" Style="{StaticResource EyebrowLabel}" />
                         <Label Text="Long-term" Style="{StaticResource SectionTitle}" />
                         <Label Text="Scenario planning" Style="{StaticResource ChipLabel}" />
                     </VerticalStackLayout>

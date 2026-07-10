@@ -16,6 +16,14 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
     private string category = DefaultCategory;
     private DateTime occurredOn = DateTime.Today;
     private bool isCredit;
+    private bool amountTouched;
+    private bool merchantTouched;
+    private bool categoryTouched;
+    private bool showAllValidationErrors;
+    private bool isSaving;
+    private string? amountValidationError;
+    private string? merchantValidationError;
+    private string? categoryValidationError;
     private string? amountError;
     private string? merchantError;
     private string? categoryError;
@@ -28,7 +36,7 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
 
         this.transactionApplicationService = transactionApplicationService;
         SaveCommand = new AsyncRelayCommand(SaveTransactionAsync, CanSave);
-        Validate();
+        Validate(revealErrors: false);
     }
 
     public string Amount
@@ -38,8 +46,9 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
         {
             if (SetProperty(ref amount, value))
             {
+                amountTouched = true;
                 ClearSaveStatusMessage();
-                Validate();
+                Validate(revealErrors: false);
             }
         }
     }
@@ -51,8 +60,9 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
         {
             if (SetProperty(ref merchant, value))
             {
+                merchantTouched = true;
                 ClearSaveStatusMessage();
-                Validate();
+                Validate(revealErrors: false);
             }
         }
     }
@@ -64,8 +74,9 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
         {
             if (SetProperty(ref category, value))
             {
+                categoryTouched = true;
                 ClearSaveStatusMessage();
-                Validate();
+                Validate(revealErrors: false);
             }
         }
     }
@@ -114,6 +125,20 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
 
     public bool HasErrors => AmountError is not null || MerchantError is not null || CategoryError is not null;
 
+    public bool IsInvalid => amountValidationError is not null || merchantValidationError is not null || categoryValidationError is not null;
+
+    public bool HasAmountError => AmountError is not null;
+
+    public bool HasMerchantError => MerchantError is not null;
+
+    public bool HasCategoryError => CategoryError is not null;
+
+    public bool IsSaving
+    {
+        get => isSaving;
+        private set => SetProperty(ref isSaving, value);
+    }
+
     public string? SaveStatusMessage
     {
         get => saveStatusMessage;
@@ -138,23 +163,41 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
 
     public bool Validate()
     {
-        AmountError = ParseAmount() is null
+        return Validate(revealErrors: true);
+    }
+
+    private bool Validate(bool revealErrors)
+    {
+        if (revealErrors)
+        {
+            showAllValidationErrors = true;
+        }
+
+        amountValidationError = ParseAmount() is null
             ? "Enter a positive amount."
             : null;
-        MerchantError = string.IsNullOrWhiteSpace(Merchant)
+        merchantValidationError = string.IsNullOrWhiteSpace(Merchant)
             ? "Enter a merchant or note."
             : null;
-        CategoryError = string.IsNullOrWhiteSpace(Category)
+        categoryValidationError = string.IsNullOrWhiteSpace(Category)
             ? "Enter a category."
             : null;
 
+        AmountError = showAllValidationErrors || amountTouched ? amountValidationError : null;
+        MerchantError = showAllValidationErrors || merchantTouched ? merchantValidationError : null;
+        CategoryError = showAllValidationErrors || categoryTouched ? categoryValidationError : null;
+
         OnPropertyChanged(nameof(HasErrors));
+        OnPropertyChanged(nameof(IsInvalid));
+        OnPropertyChanged(nameof(HasAmountError));
+        OnPropertyChanged(nameof(HasMerchantError));
+        OnPropertyChanged(nameof(HasCategoryError));
         ((AsyncRelayCommand)SaveCommand).RaiseCanExecuteChanged();
 
-        return !HasErrors;
+        return !IsInvalid;
     }
 
-    private bool CanSave() => !HasErrors;
+    private bool CanSave() => !IsInvalid;
 
     private async Task SaveTransactionAsync()
     {
@@ -169,37 +212,50 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
             return;
         }
 
-        var transaction = new FinancialTransaction(
-            Guid.NewGuid(),
-            new MoneyAmount(parsedAmount.Value),
-            IsCredit ? TransactionDirection.Credit : TransactionDirection.Debit,
-            TransactionSource.ManualCash,
-            new DateTimeOffset(OccurredOn.Date, TimeSpan.Zero),
-            Merchant,
-            Category,
-            sourceReferenceHash: null);
-
-        var saveResult = await transactionApplicationService.SaveAsync(transaction);
-
-        if (saveResult.Status == TransactionSaveStatus.Saved)
+        IsSaving = true;
+        try
         {
-            LastCreatedTransaction = saveResult.Transaction;
-            ResetForm();
-            SaveStatusMessage = "Entry saved.";
-            return;
-        }
+            var transaction = new FinancialTransaction(
+                Guid.NewGuid(),
+                new MoneyAmount(parsedAmount.Value),
+                IsCredit ? TransactionDirection.Credit : TransactionDirection.Debit,
+                TransactionSource.ManualCash,
+                new DateTimeOffset(OccurredOn.Date, TimeSpan.Zero),
+                Merchant,
+                Category,
+                sourceReferenceHash: null);
 
-        LastCreatedTransaction = null;
-        SaveStatusMessage = "Entry was already saved.";
+            var saveResult = await transactionApplicationService.SaveAsync(transaction);
+
+            if (saveResult.Status == TransactionSaveStatus.Saved)
+            {
+                LastCreatedTransaction = saveResult.Transaction;
+                ResetForm();
+                SaveStatusMessage = "Entry saved.";
+                return;
+            }
+
+            LastCreatedTransaction = null;
+            SaveStatusMessage = "Entry was already saved.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
     }
 
     private void ResetForm()
     {
-        Amount = string.Empty;
-        Merchant = string.Empty;
-        Category = DefaultCategory;
-        OccurredOn = DateTime.Today;
-        IsCredit = false;
+        SetProperty(ref amount, string.Empty, nameof(Amount));
+        SetProperty(ref merchant, string.Empty, nameof(Merchant));
+        SetProperty(ref category, DefaultCategory, nameof(Category));
+        SetProperty(ref occurredOn, DateTime.Today, nameof(OccurredOn));
+        SetProperty(ref isCredit, false, nameof(IsCredit));
+        amountTouched = false;
+        merchantTouched = false;
+        categoryTouched = false;
+        showAllValidationErrors = false;
+        Validate(revealErrors: false);
     }
 
     private void ClearSaveStatusMessage()

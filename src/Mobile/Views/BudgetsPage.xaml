@@ -4,24 +4,55 @@
              xmlns:vm="clr-namespace:HasbeMaal.Presentation.ViewModels;assembly=HasbeMaal.Presentation"
              x:Class="HasbeMaal.Mobile.Views.BudgetsPage"
              x:DataType="vm:BudgetsViewModel"
+             SafeAreaEdges="Container, Container, Container, SoftInput"
              Title="Budgets">
-    <Grid RowDefinitions="Auto,*" Style="{StaticResource PageListLayout}">
+    <Grid RowDefinitions="Auto,Auto,*" Style="{StaticResource PageListLayout}">
         <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
+            <Label Text="PLANNING" Style="{StaticResource EyebrowLabel}" />
             <Label Text="Budgets" Style="{StaticResource PageTitle}" />
             <Label Text="Monthly category progress with remaining room at a glance." Style="{StaticResource PageSubtitle}" />
         </VerticalStackLayout>
 
-        <CollectionView Grid.Row="1"
+        <Border Grid.Row="1"
+                Style="{StaticResource LoadingStateBorder}"
+                IsVisible="{Binding IsLoading}">
+            <HorizontalStackLayout Spacing="12">
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   VerticalOptions="Center" />
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="Preparing budget view" Style="{StaticResource ChipLabel}" />
+                    <Label Text="Combining local budgets with monthly spending totals." Style="{StaticResource MutedLabel}" />
+                </VerticalStackLayout>
+            </HorizontalStackLayout>
+        </Border>
+
+        <CollectionView Grid.Row="2"
                         ItemsSource="{Binding Items}"
                         SelectionMode="None">
             <CollectionView.ItemsLayout>
                 <LinearItemsLayout Orientation="Vertical" ItemSpacing="12" />
             </CollectionView.ItemsLayout>
             <CollectionView.EmptyView>
-                <Border Style="{StaticResource EmptyStateBorder}">
-                    <VerticalStackLayout Style="{StaticResource EmptyStateLayout}">
+                <Border Style="{StaticResource EmptyAffordanceBorder}"
+                        VerticalOptions="Start">
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="BUDGET FRAMEWORK" Style="{StaticResource EyebrowLabel}" />
                         <Label Text="No budget progress yet" Style="{StaticResource SectionTitle}" />
                         <Label Text="Budget categories and monthly spending totals will appear here." Style="{StaticResource MutedLabel}" />
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <Border Style="{StaticResource GlassPanelBorder}">
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="Essentials" Style="{StaticResource ChipLabel}" />
+                                    <Label Text="Rent, food, education, health." Style="{StaticResource MutedLabel}" />
+                                </VerticalStackLayout>
+                            </Border>
+                            <Border Grid.Column="1" Style="{StaticResource GlassPanelBorder}">
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="Flexible" Style="{StaticResource ChipLabel}" />
+                                    <Label Text="Transport, lifestyle, buffers." Style="{StaticResource MutedLabel}" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </Grid>
                     </VerticalStackLayout>
                 </Border>
             </CollectionView.EmptyView>

@@ -4,59 +4,76 @@
              xmlns:vm="clr-namespace:HasbeMaal.Presentation.ViewModels;assembly=HasbeMaal.Presentation"
              x:Class="HasbeMaal.Mobile.Views.DashboardPage"
              x:DataType="vm:DashboardViewModel"
+             SafeAreaEdges="Container, Container, Container, SoftInput"
              Title="Dashboard">
     <ScrollView>
         <VerticalStackLayout Style="{StaticResource PageContentLayout}">
-            <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
-                <Label Text="Dashboard" Style="{StaticResource PageTitle}" />
-                <Label Text="Local-first family finance, kept calm and readable." Style="{StaticResource PageSubtitle}" />
-            </VerticalStackLayout>
-
-            <Border Style="{StaticResource CardBorder}">
+            <Border Style="{StaticResource HeroCardBorder}">
                 <VerticalStackLayout Style="{StaticResource CardContentLayout}">
                     <Grid ColumnDefinitions="*,Auto">
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="Monthly snapshot" Style="{StaticResource SectionTitle}" />
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="PRIVATE FINANCE" Style="{StaticResource EyebrowLabel}" />
+                            <Label Text="Dashboard" Style="{StaticResource PageTitle}" />
+                            <Label Text="Local-first family finance, kept calm and readable." Style="{StaticResource PageSubtitle}" />
                             <Label Text="{Binding MonthTitle}" Style="{StaticResource MutedLabel}" />
                         </VerticalStackLayout>
                         <Border Grid.Column="1"
-                                Style="{StaticResource PillBorder}">
+                                Style="{StaticResource PillBorder}"
+                                VerticalOptions="Start">
                             <Label Text="Local" Style="{StaticResource ChipLabel}" />
                         </Border>
                     </Grid>
 
-                    <ActivityIndicator IsRunning="{Binding IsLoading}"
-                                       IsVisible="{Binding IsLoading}"
-                                       HorizontalOptions="Start" />
+                    <Border Style="{StaticResource LoadingStateBorder}"
+                            IsVisible="{Binding IsLoading}">
+                        <HorizontalStackLayout Spacing="12">
+                            <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                               VerticalOptions="Center" />
+                            <VerticalStackLayout Spacing="2">
+                                <Label Text="Preparing local snapshot" Style="{StaticResource ChipLabel}" />
+                                <Label Text="Reading encrypted summaries on this device." Style="{StaticResource MutedLabel}" />
+                            </VerticalStackLayout>
+                        </HorizontalStackLayout>
+                    </Border>
 
-                    <VerticalStackLayout Spacing="10">
-                        <Border Style="{StaticResource InsetPanelBorder}">
-                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <Border Style="{StaticResource GlassPanelBorder}">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Cashflow position" Style="{StaticResource FieldLabel}" />
+                            <Label Text="{Binding BalanceText}" Style="{StaticResource HeroMetricValue}" />
+                            <Label Text="{Binding BalanceLabel}" Style="{StaticResource ChipLabel}" />
+                            <Label Text="{Binding ActivityText}" Style="{StaticResource MutedLabel}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <Border Style="{StaticResource MetricTileBorder}">
+                            <VerticalStackLayout Spacing="6">
                                 <Label Text="Income" Style="{StaticResource FieldLabel}" />
-                                <Label Grid.Column="1" Text="{Binding IncomeText}" Style="{StaticResource SectionTitle}" FontSize="16" HorizontalTextAlignment="End" />
-                            </Grid>
+                                <Label Text="{Binding IncomeText}" Style="{StaticResource MetricValue}" />
+                            </VerticalStackLayout>
                         </Border>
-                        <Border Style="{StaticResource InsetPanelBorder}">
-                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <Border Grid.Column="1" Style="{StaticResource MetricTileBorder}">
+                            <VerticalStackLayout Spacing="6">
                                 <Label Text="Expenses" Style="{StaticResource FieldLabel}" />
-                                <Label Grid.Column="1" Text="{Binding ExpensesText}" Style="{StaticResource SectionTitle}" FontSize="16" HorizontalTextAlignment="End" />
-                            </Grid>
+                                <Label Text="{Binding ExpensesText}" Style="{StaticResource MetricValue}" />
+                            </VerticalStackLayout>
                         </Border>
-                        <Border Style="{StaticResource InsetPanelBorder}">
-                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                                <Label Text="{Binding BalanceLabel}" Style="{StaticResource FieldLabel}" />
-                                <Label Grid.Column="1" Text="{Binding BalanceText}" Style="{StaticResource SectionTitle}" FontSize="16" HorizontalTextAlignment="End" />
-                            </Grid>
-                        </Border>
-                    </VerticalStackLayout>
-
-                    <Label Text="{Binding ActivityText}" Style="{StaticResource MutedLabel}" />
+                    </Grid>
 
                     <Border Style="{StaticResource EmptyStateBorder}"
                             IsVisible="{Binding IsEmpty}">
-                        <VerticalStackLayout Style="{StaticResource EmptyStateLayout}">
+                        <VerticalStackLayout Spacing="14">
+                            <Label Text="START HERE" Style="{StaticResource EyebrowLabel}" />
                             <Label Text="No activity yet" Style="{StaticResource SectionTitle}" />
                             <Label Text="Add a manual entry or enable local imports when you are ready." Style="{StaticResource MutedLabel}" />
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                                <Button Text="Add entry"
+                                        Clicked="OnAddEntryClicked" />
+                                <Button Grid.Column="1"
+                                    Text="Plan"
+                                        Style="{StaticResource SecondaryButton}"
+                                        Clicked="OnPlanningClicked" />
+                            </Grid>
                         </VerticalStackLayout>
                     </Border>
 
@@ -81,14 +98,16 @@
             </Border>
 
             <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                <Border Style="{StaticResource CardBorder}">
+                <Border Style="{StaticResource AccentPanelBorder}">
                     <VerticalStackLayout Spacing="8">
+                        <Label Text="LOCAL-FIRST" Style="{StaticResource EyebrowLabel}" />
                         <Label Text="Privacy" Style="{StaticResource SectionTitle}" />
                         <Label Text="Raw SMS storage stays off by default." Style="{StaticResource MutedLabel}" />
                     </VerticalStackLayout>
                 </Border>
                 <Border Grid.Column="1" Style="{StaticResource CardBorder}">
                     <VerticalStackLayout Spacing="8">
+                        <Label Text="NEXT" Style="{StaticResource EyebrowLabel}" />
                         <Label Text="Planning" Style="{StaticResource SectionTitle}" />
                         <Label Text="Budgets and goals remain separate from transaction entry." Style="{StaticResource MutedLabel}" />
                     </VerticalStackLayout>

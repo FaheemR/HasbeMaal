@@ -12,11 +12,15 @@ public sealed class ManualTransactionEntryViewModelTests
     {
         var viewModel = new ManualTransactionEntryViewModel(new CapturingTransactionApplicationService());
 
-        Assert.IsTrue(viewModel.HasErrors);
+        Assert.IsTrue(viewModel.IsInvalid);
+        Assert.IsFalse(viewModel.HasErrors);
         Assert.IsFalse(viewModel.SaveCommand.CanExecute(null));
-        Assert.IsNotNull(viewModel.AmountError);
-        Assert.IsNotNull(viewModel.MerchantError);
+        Assert.IsNull(viewModel.AmountError);
+        Assert.IsNull(viewModel.MerchantError);
         Assert.IsNull(viewModel.CategoryError);
+        Assert.IsFalse(viewModel.HasAmountError);
+        Assert.IsFalse(viewModel.HasMerchantError);
+        Assert.IsFalse(viewModel.HasCategoryError);
         Assert.IsNull(viewModel.SaveStatusMessage);
         Assert.IsFalse(viewModel.HasSaveStatusMessage);
     }
@@ -29,6 +33,7 @@ public sealed class ManualTransactionEntryViewModelTests
         var isValid = viewModel.Validate();
 
         Assert.IsTrue(isValid);
+        Assert.IsFalse(viewModel.IsInvalid);
         Assert.IsFalse(viewModel.HasErrors);
         Assert.IsTrue(viewModel.SaveCommand.CanExecute(null));
     }
@@ -47,7 +52,9 @@ public sealed class ManualTransactionEntryViewModelTests
         viewModel.Amount = amount;
 
         Assert.IsFalse(viewModel.Validate());
+        Assert.IsTrue(viewModel.IsInvalid);
         Assert.AreEqual("Enter a positive amount.", viewModel.AmountError);
+        Assert.IsTrue(viewModel.HasAmountError);
         Assert.IsFalse(viewModel.SaveCommand.CanExecute(null));
     }
 
@@ -73,6 +80,8 @@ public sealed class ManualTransactionEntryViewModelTests
         Assert.AreEqual(string.Empty, viewModel.Amount);
         Assert.AreEqual(string.Empty, viewModel.Merchant);
         Assert.AreEqual("Uncategorized", viewModel.Category);
+        Assert.IsTrue(viewModel.IsInvalid);
+        Assert.IsFalse(viewModel.HasErrors);
         Assert.AreEqual(DateTime.Today, viewModel.OccurredOn);
         Assert.IsFalse(viewModel.IsCredit);
         Assert.AreEqual("Entry saved.", viewModel.SaveStatusMessage);

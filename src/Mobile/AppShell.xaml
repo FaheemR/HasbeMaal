@@ -5,60 +5,42 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:HasbeMaal.Mobile.Views"
     Title="HasbeMaal"
-    FlyoutBehavior="Flyout"
+    FlyoutBehavior="Disabled"
     FlyoutWidth="320"
-    Shell.NavBarIsVisible="True">
+    Shell.NavBarIsVisible="False">
 
-    <Shell.FlyoutHeader>
-        <Grid Padding="24,28,24,24"
-              BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}"
-              RowDefinitions="Auto,Auto"
-              RowSpacing="6">
-            <Label Text="HasbeMaal" Style="{StaticResource SectionTitle}" FontSize="22" />
-            <Label Grid.Row="1" Text="Private family finance" Style="{StaticResource MutedLabel}" />
-        </Grid>
-    </Shell.FlyoutHeader>
-
-    <FlyoutItem Title="Dashboard">
+    <TabBar>
         <ShellContent
             Title="Dashboard"
-            ContentTemplate="{DataTemplate views:DashboardPage}"
+            Icon="nav_dashboard.svg"
             Route="Dashboard" />
-    </FlyoutItem>
 
-    <FlyoutItem Title="Transactions">
         <ShellContent
-            x:Name="TransactionsShellContent"
             Title="Transactions"
+            Icon="nav_transactions.svg"
             Route="Transactions" />
-    </FlyoutItem>
 
-    <FlyoutItem Title="Add transaction">
         <ShellContent
-            x:Name="ManualEntryShellContent"
-            Title="Add transaction"
+            Title="Add"
+            Icon="nav_add.svg"
             Route="ManualEntry" />
-    </FlyoutItem>
 
-    <FlyoutItem Title="Budgets">
-        <ShellContent
-            x:Name="BudgetsShellContent"
-            Title="Budgets"
-            Route="Budgets" />
-    </FlyoutItem>
+        <Tab Title="Planning"
+             Icon="nav_planning.svg"
+             Route="Planning">
+            <ShellContent
+                Title="Budgets"
+                Route="Budgets" />
 
-    <FlyoutItem Title="Goals">
-        <ShellContent
-            Title="Goals"
-            ContentTemplate="{DataTemplate views:GoalsPage}"
-            Route="Goals" />
-    </FlyoutItem>
+            <ShellContent
+                Title="Goals"
+                Route="Goals" />
+        </Tab>
 
-    <FlyoutItem Title="Settings">
         <ShellContent
-            x:Name="SettingsShellContent"
             Title="Settings"
+            Icon="nav_settings.svg"
             Route="Settings" />
-    </FlyoutItem>
+    </TabBar>
 
 </Shell>

@@ -4,14 +4,29 @@
              xmlns:vm="clr-namespace:HasbeMaal.Presentation.ViewModels;assembly=HasbeMaal.Presentation"
              x:Class="HasbeMaal.Mobile.Views.TransactionsPage"
              x:DataType="vm:TransactionsViewModel"
+             SafeAreaEdges="Container, Container, Container, SoftInput"
              Title="Transactions">
-    <Grid RowDefinitions="Auto,*" Style="{StaticResource PageListLayout}">
+    <Grid RowDefinitions="Auto,Auto,*" Style="{StaticResource PageListLayout}">
         <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
+            <Label Text="LEDGER" Style="{StaticResource EyebrowLabel}" />
             <Label Text="Transactions" Style="{StaticResource PageTitle}" />
             <Label Text="Grouped by month with clear amounts, dates, and direction." Style="{StaticResource PageSubtitle}" />
         </VerticalStackLayout>
 
-        <CollectionView Grid.Row="1"
+        <Border Grid.Row="1"
+                Style="{StaticResource LoadingStateBorder}"
+                IsVisible="{Binding IsLoading}">
+            <HorizontalStackLayout Spacing="12">
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   VerticalOptions="Center" />
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="Opening local ledger" Style="{StaticResource ChipLabel}" />
+                    <Label Text="Grouping entries by month and category." Style="{StaticResource MutedLabel}" />
+                </VerticalStackLayout>
+            </HorizontalStackLayout>
+        </Border>
+
+        <CollectionView Grid.Row="2"
                         ItemsSource="{Binding Groups}"
                         IsGrouped="True"
                         SelectionMode="None">
@@ -19,10 +34,14 @@
                 <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
             </CollectionView.ItemsLayout>
             <CollectionView.EmptyView>
-                <Border Style="{StaticResource EmptyStateBorder}">
-                    <VerticalStackLayout Style="{StaticResource EmptyStateLayout}">
+                <Border Style="{StaticResource EmptyAffordanceBorder}"
+                        VerticalOptions="Start">
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="LEDGER READY" Style="{StaticResource EyebrowLabel}" />
                         <Label Text="No transactions yet" Style="{StaticResource SectionTitle}" />
                         <Label Text="Manual entries and local imports will appear here." Style="{StaticResource MutedLabel}" />
+                        <Button Text="Add first entry"
+                                Clicked="OnAddEntryClicked" />
                     </VerticalStackLayout>
                 </Border>
             </CollectionView.EmptyView>
