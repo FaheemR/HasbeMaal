@@ -18,8 +18,6 @@ namespace HasbeMaal.Mobile.Platforms.Android;
 /// </summary>
 public sealed class AndroidSmsInboxReader : ISmsInboxReader
 {
-    private const int PageSize = 500;
-
     private readonly SmsSenderAllowlist _allowlist;
 
     public AndroidSmsInboxReader(SmsSenderAllowlist allowlist)
@@ -78,60 +76,41 @@ public sealed class AndroidSmsInboxReader : ISmsInboxReader
 
         var sortOrder = $"{Telephony.ITextBasedSmsColumns.Date} ASC";
 
-        var messages = new List<SmsInboxMessage>();
-        var offset = 0;
+        // Single streamed query. The ContentResolver returns a windowed cursor (CursorWindow),
+        // so the platform pages rows into memory as we iterate; the whole inbox is not held at
+        // once. We deliberately do NOT use ?limit/?offset URI parameters for manual paging:
+        // several OEM SMS providers silently ignore them, which makes each "page" return the same
+        // rows and turns the loop into a non-terminating scan. Only allowlisted messages are kept,
+        // so the retained list stays small regardless of total inbox size.
+        using var cursor = resolver.Query(inboxUri, projection, selection, selectionArgs, sortOrder);
+        if (cursor is null)
+        {
+            return Array.Empty<SmsInboxMessage>();
+        }
 
-        // Bounded paging off the UI thread: read fixed-size pages until a short page is seen.
-        while (true)
+        var addressColumn = cursor.GetColumnIndex(Telephony.ITextBasedSmsColumns.Address);
+        var bodyColumn = cursor.GetColumnIndex(Telephony.ITextBasedSmsColumns.Body);
+        var dateColumn = cursor.GetColumnIndex(Telephony.ITextBasedSmsColumns.Date);
+
+        var messages = new List<SmsInboxMessage>();
+        while (cursor.MoveToNext())
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var pageUri = inboxUri.BuildUpon()
-                ?.AppendQueryParameter("limit", PageSize.ToString(CultureInfo.InvariantCulture))
-                ?.AppendQueryParameter("offset", offset.ToString(CultureInfo.InvariantCulture))
-                ?.Build();
-            if (pageUri is null)
+            // Sender address is read only to run the allowlist check, then discarded.
+            var address = addressColumn >= 0 ? cursor.GetString(addressColumn) : null;
+            if (!_allowlist.IsAllowed(address))
             {
-                break;
+                continue;
             }
 
-            using var cursor = resolver.Query(pageUri, projection, selection, selectionArgs, sortOrder);
-            if (cursor is null)
-            {
-                break;
-            }
+            var body = bodyColumn >= 0 ? cursor.GetString(bodyColumn) : null;
+            var dateMs = dateColumn >= 0 ? cursor.GetLong(dateColumn) : 0L;
 
-            var addressColumn = cursor.GetColumnIndex(Telephony.ITextBasedSmsColumns.Address);
-            var bodyColumn = cursor.GetColumnIndex(Telephony.ITextBasedSmsColumns.Body);
-            var dateColumn = cursor.GetColumnIndex(Telephony.ITextBasedSmsColumns.Date);
-
-            var rowsInPage = 0;
-            while (rowsInPage < PageSize && cursor.MoveToNext())
-            {
-                rowsInPage++;
-
-                // Sender address is read only to run the allowlist check, then discarded.
-                var address = addressColumn >= 0 ? cursor.GetString(addressColumn) : null;
-                if (!_allowlist.IsAllowed(address))
-                {
-                    continue;
-                }
-
-                var body = bodyColumn >= 0 ? cursor.GetString(bodyColumn) : null;
-                var dateMs = dateColumn >= 0 ? cursor.GetLong(dateColumn) : 0L;
-
-                // Only the body and received timestamp cross the boundary; the address is dropped.
-                messages.Add(new SmsInboxMessage(
-                    body ?? string.Empty,
-                    DateTimeOffset.FromUnixTimeMilliseconds(dateMs)));
-            }
-
-            if (rowsInPage < PageSize)
-            {
-                break;
-            }
-
-            offset += PageSize;
+            // Only the body and received timestamp cross the boundary; the address is dropped.
+            messages.Add(new SmsInboxMessage(
+                body ?? string.Empty,
+                DateTimeOffset.FromUnixTimeMilliseconds(dateMs)));
         }
 
         return messages;
