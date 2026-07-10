@@ -41,6 +41,20 @@ public sealed class ITransactionRepositoryTests
     }
 
     [TestMethod]
+    public void RepositoryContract_DeleteManyAsync_AcceptsReadOnlyIdListAndCancellationToken()
+    {
+        var method = typeof(ITransactionRepository).GetMethod(nameof(ITransactionRepository.DeleteManyAsync));
+
+        Assert.IsNotNull(method);
+        Assert.AreEqual(typeof(Task), method.ReturnType);
+
+        var parameters = method.GetParameters();
+        Assert.HasCount(2, parameters);
+        Assert.AreEqual(typeof(IReadOnlyList<Guid>), parameters[0].ParameterType);
+        Assert.AreEqual(typeof(CancellationToken), parameters[1].ParameterType);
+    }
+
+    [TestMethod]
     public void RepositoryContract_GetByIdAsync_ReturnsNullableTransactionTask()
     {
         var method = typeof(ITransactionRepository).GetMethod(nameof(ITransactionRepository.GetByIdAsync));

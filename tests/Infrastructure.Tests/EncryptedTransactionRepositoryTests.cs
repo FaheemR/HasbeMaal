@@ -175,6 +175,64 @@ public sealed class EncryptedTransactionRepositoryTests
     }
 
     [TestMethod]
+    public async Task DeleteManyAsync_RemovesOnlyTargetedTransactions()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var repository = NewRepository(directory.Path);
+        var kept = NewTransaction(
+            Guid.Parse("33333333-3333-3333-3333-333333333333"),
+            new DateTimeOffset(2026, 7, 5, 9, 0, 0, TimeSpan.Zero),
+            merchant: "REDACTED STORE",
+            category: "Groceries",
+            amount: 60m);
+        var removed = NewTransaction(
+            Guid.Parse("44444444-4444-4444-4444-444444444444"),
+            new DateTimeOffset(2026, 7, 9, 10, 30, 0, TimeSpan.Zero),
+            merchant: "REDACTED CAFE",
+            category: "Dining",
+            amount: 42m);
+
+        await repository.SaveManyAsync([kept, removed]);
+        await repository.DeleteManyAsync([removed.Id]);
+
+        var transactions = await repository.ListAsync(
+            new DateOnly(2026, 7, 1),
+            new DateOnly(2026, 7, 31));
+
+        var remaining = Assert.ContainsSingle(transactions);
+        Assert.AreEqual(kept, remaining);
+        Assert.IsNull(await repository.GetByIdAsync(removed.Id));
+    }
+
+    [TestMethod]
+    public async Task DeleteManyAsync_EmptyBatch_RemovesNothing()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var repository = NewRepository(directory.Path);
+        var transaction = NewTransaction(
+            Guid.Parse("66666666-6666-6666-6666-666666666666"),
+            new DateTimeOffset(2026, 7, 9, 10, 30, 0, TimeSpan.Zero),
+            merchant: "REDACTED STORE",
+            category: "Groceries",
+            amount: 125.75m);
+
+        await repository.SaveAsync(transaction);
+        await repository.DeleteManyAsync([]);
+
+        Assert.AreEqual(transaction, await repository.GetByIdAsync(transaction.Id));
+    }
+
+    [TestMethod]
+    public async Task DeleteManyAsync_NullIds_Throws()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var repository = NewRepository(directory.Path);
+
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(
+            async () => await repository.DeleteManyAsync(null!));
+    }
+
+    [TestMethod]
     public async Task ListAsync_InclusiveDateRange_ReturnsDeterministicOrder()
     {
         using var directory = TemporaryDirectory.Create();

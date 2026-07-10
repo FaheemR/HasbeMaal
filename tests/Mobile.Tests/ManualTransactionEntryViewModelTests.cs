@@ -194,6 +194,11 @@ public sealed class ManualTransactionEntryViewModelTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(savedTransactions.SingleOrDefault(transaction => transaction.Id == id));
 
+        public Task DeleteManyAsync(
+            IReadOnlyList<Guid> ids,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
         public Task<IReadOnlyList<FinancialTransaction>> ListAsync(
             DateOnly from,
             DateOnly to,

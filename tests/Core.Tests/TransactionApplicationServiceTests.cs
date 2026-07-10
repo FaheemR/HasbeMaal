@@ -134,6 +134,41 @@ public sealed class TransactionApplicationServiceTests
         Assert.AreSame(included, result.Single());
     }
 
+    [TestMethod]
+    public async Task DeleteManyAsync_RemovesTransactionsThroughRepository()
+    {
+        var first = NewTransaction(Guid.NewGuid(), "HASH010");
+        var second = NewTransaction(Guid.NewGuid(), "HASH011");
+        var repository = new FakeTransactionRepository([first, second]);
+        var service = new TransactionApplicationService(repository);
+
+        await service.DeleteManyAsync([first.Id]);
+
+        Assert.AreEqual(first.Id, repository.DeletedIds.Single());
+        Assert.IsNull(await repository.GetByIdAsync(first.Id));
+        Assert.AreEqual(second.Id, (await repository.GetByIdAsync(second.Id))?.Id);
+    }
+
+    [TestMethod]
+    public async Task DeleteManyAsync_EmptyIds_DoesNotTouchRepository()
+    {
+        var repository = new FakeTransactionRepository();
+        var service = new TransactionApplicationService(repository);
+
+        await service.DeleteManyAsync([]);
+
+        Assert.IsEmpty(repository.DeletedIds);
+    }
+
+    [TestMethod]
+    public async Task DeleteManyAsync_NullIds_Throws()
+    {
+        var service = new TransactionApplicationService(new FakeTransactionRepository());
+
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(
+            async () => await service.DeleteManyAsync(null!));
+    }
+
     private static FinancialTransaction NewTransaction(
         Guid id,
         string? sourceReferenceHash,
@@ -237,6 +272,24 @@ public sealed class TransactionApplicationServiceTests
                         transactions.Add(transaction);
                     }
                 }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public List<Guid> DeletedIds { get; } = [];
+
+        public Task DeleteManyAsync(
+            IReadOnlyList<Guid> ids,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(ids);
+
+            lock (syncRoot)
+            {
+                DeletedIds.AddRange(ids);
+                var targetIds = new HashSet<Guid>(ids);
+                transactions.RemoveAll(transaction => targetIds.Contains(transaction.Id));
             }
 
             return Task.CompletedTask;

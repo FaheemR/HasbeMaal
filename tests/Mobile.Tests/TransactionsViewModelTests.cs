@@ -128,6 +128,11 @@ public sealed class TransactionsViewModelTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(transactions.SingleOrDefault(transaction => transaction.Id == id));
 
+        public Task DeleteManyAsync(
+            IReadOnlyList<Guid> ids,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
         public Task<IReadOnlyList<FinancialTransaction>> ListAsync(
             DateOnly from,
             DateOnly to,

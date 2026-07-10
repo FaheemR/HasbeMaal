@@ -322,6 +322,96 @@ public sealed class SmsImportViewModelTests
         Assert.AreEqual(firstWatermark, importer.LastWatermark);
     }
 
+    [TestMethod]
+    public async Task ImportAsync_WithReadyTransactions_EnablesUndo()
+    {
+        var importer = new FakeSmsTransactionImporter
+        {
+            Result = new SmsImportResult(
+                Ready: [NewTransaction("REDACTED SHOP", "Groceries", 100m, Utc(2026, 7, 10))],
+                NeedsReview: [],
+                DuplicateCount: 0,
+                IgnoredCount: 0,
+                Watermark: null)
+        };
+        var viewModel = NewViewModel(GrantedPermission(), new FakeSmsInboxReader(), importer);
+
+        await viewModel.ImportAsync();
+
+        Assert.IsTrue(viewModel.CanUndo);
+    }
+
+    [TestMethod]
+    public async Task UndoImportAsync_DeletesCommittedTransactionsAndDisablesUndo()
+    {
+        var applicationService = new CapturingTransactionApplicationService();
+        var ready = NewTransaction("REDACTED SHOP", "Groceries", 100m, Utc(2026, 7, 10));
+        var importer = new FakeSmsTransactionImporter
+        {
+            Result = new SmsImportResult(
+                Ready: [ready],
+                NeedsReview: [],
+                DuplicateCount: 1,
+                IgnoredCount: 2,
+                Watermark: null)
+        };
+        var viewModel = NewViewModel(GrantedPermission(), new FakeSmsInboxReader(), importer, applicationService);
+
+        await viewModel.ImportAsync();
+        await viewModel.UndoImportAsync();
+
+        Assert.AreEqual(ready.Id, applicationService.DeletedIds.Single());
+        Assert.IsFalse(viewModel.CanUndo);
+        Assert.AreEqual(0, viewModel.ReadyCount);
+        Assert.AreEqual("Import undone. 1 transaction removed.", viewModel.StatusText);
+    }
+
+    [TestMethod]
+    public async Task UndoImportAsync_IncludesAcceptedReviewTransactions()
+    {
+        var applicationService = new CapturingTransactionApplicationService();
+        var accepted = NewCandidate("REDACTED CAFE", "Dining", 42m, Utc(2026, 7, 9), ParseConfidence.Medium);
+        var ready = NewTransaction("REDACTED SHOP", "Groceries", 100m, Utc(2026, 7, 10));
+        var importer = new FakeSmsTransactionImporter
+        {
+            Result = new SmsImportResult(
+                Ready: [ready],
+                NeedsReview: [accepted],
+                DuplicateCount: 0,
+                IgnoredCount: 0,
+                Watermark: null)
+        };
+        var viewModel = NewViewModel(GrantedPermission(), new FakeSmsInboxReader(), importer, applicationService);
+
+        await viewModel.ImportAsync();
+        SelectItem(viewModel, "2026 July - REDACTED CAFE");
+        await viewModel.AcceptSelectedAsync();
+
+        await viewModel.UndoImportAsync();
+
+        Assert.HasCount(2, applicationService.DeletedIds);
+        Assert.AreEqual(ready.Id, applicationService.DeletedIds[0]);
+        Assert.AreEqual(accepted.Transaction.Id, applicationService.DeletedIds[1]);
+        Assert.AreEqual("Import undone. 2 transactions removed.", viewModel.StatusText);
+    }
+
+    [TestMethod]
+    public async Task UndoImportAsync_WithNothingCommitted_DoesNotDelete()
+    {
+        var applicationService = new CapturingTransactionApplicationService();
+        var importer = new FakeSmsTransactionImporter
+        {
+            Result = ReviewOnlyResult(NewCandidate("REDACTED STORE", "Groceries", 80m, Utc(2026, 7, 5), ParseConfidence.Low))
+        };
+        var viewModel = NewViewModel(GrantedPermission(), new FakeSmsInboxReader(), importer, applicationService);
+
+        await viewModel.ImportAsync();
+        await viewModel.UndoImportAsync();
+
+        Assert.IsEmpty(applicationService.DeletedIds);
+        Assert.IsFalse(viewModel.CanUndo);
+    }
+
     private static SmsImportViewModel NewViewModel(
         FakeSmsPermissionService permissionService,
         FakeSmsInboxReader reader,
@@ -447,6 +537,18 @@ public sealed class SmsImportViewModelTests
             Guid id,
             CancellationToken cancellationToken = default) =>
             Task.FromResult<FinancialTransaction?>(null);
+
+        public List<Guid> DeletedIds { get; } = [];
+
+        public Task DeleteManyAsync(
+            IReadOnlyList<Guid> ids,
+            CancellationToken cancellationToken = default)
+        {
+            DeletedIds.AddRange(ids);
+            var targetIds = new HashSet<Guid>(ids);
+            SavedTransactions.RemoveAll(transaction => targetIds.Contains(transaction.Id));
+            return Task.CompletedTask;
+        }
 
         public Task<IReadOnlyList<FinancialTransaction>> ListAsync(
             DateOnly from,

@@ -44,6 +44,29 @@ public sealed class TransactionApplicationService : ITransactionApplicationServi
         }
     }
 
+    public async Task DeleteManyAsync(
+        IReadOnlyList<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+
+        if (ids.Count == 0)
+        {
+            return;
+        }
+
+        await saveGate.WaitAsync(cancellationToken);
+
+        try
+        {
+            await transactionRepository.DeleteManyAsync(ids, cancellationToken);
+        }
+        finally
+        {
+            saveGate.Release();
+        }
+    }
+
     public Task<FinancialTransaction?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default) =>

@@ -112,4 +112,31 @@ public sealed class LoggingTransactionApplicationService : ITransactionApplicati
 			throw;
 		}
 	}
+
+	public async Task DeleteManyAsync(
+		IReadOnlyList<Guid> ids,
+		CancellationToken cancellationToken = default)
+	{
+		logger.LogDebug(
+			"HasbeMaal diagnostic Component={Component} Operation={Operation} Status=Started Count={Count}",
+			nameof(LoggingTransactionApplicationService),
+			nameof(DeleteManyAsync),
+			ids.Count);
+
+		try
+		{
+			await inner.DeleteManyAsync(ids, cancellationToken).ConfigureAwait(false);
+
+			logger.LogDebug(
+				"HasbeMaal diagnostic Component={Component} Operation={Operation} Status=Succeeded Count={Count}",
+				nameof(LoggingTransactionApplicationService),
+				nameof(DeleteManyAsync),
+				ids.Count);
+		}
+		catch (Exception exception)
+		{
+			logger.LogSanitizedException(nameof(LoggingTransactionApplicationService), nameof(DeleteManyAsync), exception);
+			throw;
+		}
+	}
 }

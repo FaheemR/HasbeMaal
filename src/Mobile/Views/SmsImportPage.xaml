@@ -48,6 +48,11 @@
                         <Label Text="{Binding IgnoredCount, StringFormat='{0} ignored'}" Style="{StaticResource ChipLabel}" />
                     </Border>
                 </FlexLayout>
+                <Button Text="Undo import"
+                        Style="{StaticResource SecondaryButton}"
+                        IsEnabled="{Binding CanUndo}"
+                        Command="{Binding UndoImportCommand}"
+                        HorizontalOptions="Start" />
             </VerticalStackLayout>
         </Border>
 

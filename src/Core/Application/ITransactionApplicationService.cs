@@ -8,6 +8,10 @@ public interface ITransactionApplicationService
         FinancialTransaction transaction,
         CancellationToken cancellationToken = default);
 
+    Task DeleteManyAsync(
+        IReadOnlyList<Guid> ids,
+        CancellationToken cancellationToken = default);
+
     Task<FinancialTransaction?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default);

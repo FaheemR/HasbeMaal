@@ -84,6 +84,34 @@ public sealed class EncryptedTransactionRepository : ITransactionRepository
         }
     }
 
+    public async Task DeleteManyAsync(
+        IReadOnlyList<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+
+        if (ids.Count == 0)
+        {
+            return;
+        }
+
+        await writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var stored = await LoadTransactionsAsync(cancellationToken).ConfigureAwait(false);
+            var targetIds = new HashSet<Guid>(ids);
+
+            if (stored.RemoveAll(transaction => targetIds.Contains(transaction.Id)) > 0)
+            {
+                await store.SaveAsync(PartitionKey, stored, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            writeLock.Release();
+        }
+    }
+
     public async Task<FinancialTransaction?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default)

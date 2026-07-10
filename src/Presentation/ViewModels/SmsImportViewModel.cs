@@ -19,6 +19,7 @@ public sealed class SmsImportViewModel : ViewModelBase
 
     private DateTimeOffset? watermark;
     private List<SmsImportReviewCandidate> pendingReview = [];
+    private List<Guid> committedIds = [];
 
     private bool isScanning;
     private bool hasResult;
@@ -50,6 +51,7 @@ public sealed class SmsImportViewModel : ViewModelBase
         ImportCommand = new AsyncRelayCommand(() => ImportAsync());
         AcceptSelectedCommand = new AsyncRelayCommand(() => AcceptSelectedAsync());
         RejectSelectedCommand = new RelayCommand(RejectSelected);
+        UndoImportCommand = new AsyncRelayCommand(() => UndoImportAsync());
     }
 
     public ICommand ImportCommand { get; }
@@ -57,6 +59,8 @@ public sealed class SmsImportViewModel : ViewModelBase
     public ICommand AcceptSelectedCommand { get; }
 
     public ICommand RejectSelectedCommand { get; }
+
+    public ICommand UndoImportCommand { get; }
 
     public ObservableCollection<SmsImportReviewGroupViewModel> ReviewGroups { get; }
 
@@ -142,6 +146,8 @@ public sealed class SmsImportViewModel : ViewModelBase
 
     public bool IsReviewEmpty => HasResult && ReviewGroups.Count == 0;
 
+    public bool CanUndo => committedIds.Count > 0;
+
     public async Task ImportAsync(CancellationToken cancellationToken = default)
     {
         if (IsScanning)
@@ -169,6 +175,7 @@ public sealed class SmsImportViewModel : ViewModelBase
 
             watermark = result.Watermark;
             ReadyCount = result.Ready.Count;
+            committedIds = result.Ready.Select(transaction => transaction.Id).ToList();
             DuplicateCount = result.DuplicateCount;
             IgnoredCount = result.IgnoredCount;
             pendingReview = result.NeedsReview.ToList();
@@ -176,6 +183,7 @@ public sealed class SmsImportViewModel : ViewModelBase
             RebuildReviewGroups();
             HasResult = true;
             StatusText = FormatResultSummary();
+            NotifyUndoStateChanged();
         }
         finally
         {
@@ -193,10 +201,31 @@ public sealed class SmsImportViewModel : ViewModelBase
 
         foreach (var item in selected)
         {
-            await transactionApplicationService.SaveAsync(item.Transaction, cancellationToken);
+            var saveResult = await transactionApplicationService.SaveAsync(item.Transaction, cancellationToken);
+            if (saveResult.Status == TransactionSaveStatus.Saved)
+            {
+                committedIds.Add(item.Transaction.Id);
+            }
         }
 
+        NotifyUndoStateChanged();
         RemoveCandidates(selected.Select(item => item.Candidate));
+    }
+
+    public async Task UndoImportAsync(CancellationToken cancellationToken = default)
+    {
+        if (committedIds.Count == 0)
+        {
+            return;
+        }
+
+        var removedCount = committedIds.Count;
+        await transactionApplicationService.DeleteManyAsync(committedIds, cancellationToken);
+
+        committedIds = [];
+        ReadyCount = 0;
+        NotifyUndoStateChanged();
+        StatusText = FormatUndoSummary(removedCount);
     }
 
     private void RejectSelected()
@@ -265,6 +294,12 @@ public sealed class SmsImportViewModel : ViewModelBase
     private string FormatResultSummary() => string.Create(
         CultureInfo.InvariantCulture,
         $"{ReadyCount} imported, {NeedsReviewCount} to review, {DuplicateCount} duplicate, {IgnoredCount} ignored.");
+
+    private static string FormatUndoSummary(int removedCount) => string.Create(
+        CultureInfo.InvariantCulture,
+        $"Import undone. {removedCount} transaction{(removedCount == 1 ? string.Empty : "s")} removed.");
+
+    private void NotifyUndoStateChanged() => OnPropertyChanged(nameof(CanUndo));
 
     private static string FormatTitle(DateOnly month, string merchant) => string.Create(
         CultureInfo.InvariantCulture,

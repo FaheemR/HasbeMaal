@@ -276,6 +276,21 @@ public sealed class SmsTransactionImporterTests
             return Task.CompletedTask;
         }
 
+        public List<Guid> DeletedIds { get; } = [];
+
+        public Task DeleteManyAsync(
+            IReadOnlyList<Guid> ids,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(ids);
+
+            DeletedIds.AddRange(ids);
+            var targetIds = new HashSet<Guid>(ids);
+            transactions.RemoveAll(transaction => targetIds.Contains(transaction.Id));
+
+            return Task.CompletedTask;
+        }
+
         public Task<FinancialTransaction?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(transactions.SingleOrDefault(transaction => transaction.Id == id));
