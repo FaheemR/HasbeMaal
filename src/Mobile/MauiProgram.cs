@@ -1,5 +1,6 @@
 ﻿using HasbeMaal.Core.Application;
 using HasbeMaal.Core.Domain;
+using HasbeMaal.Core.Import;
 using HasbeMaal.Core.Parsing;
 using HasbeMaal.Core.Planning;
 using HasbeMaal.Infrastructure.Persistence;
@@ -61,6 +62,12 @@ public static class MauiProgram
 		builder.Services.AddSingleton<ISmsPermissionService, AndroidSmsPermissionService>();
 		#else
 		builder.Services.AddSingleton<ISmsPermissionService, UnsupportedSmsPermissionService>();
+		#endif
+		builder.Services.AddSingleton<SmsSenderAllowlist>();
+		#if ANDROID
+		builder.Services.AddSingleton<ISmsInboxReader, AndroidSmsInboxReader>();
+		#else
+		builder.Services.AddSingleton<ISmsInboxReader, UnsupportedSmsInboxReader>();
 		#endif
 		builder.Services.AddSingleton<ISecureStorage>(_ => SecureStorage.Default);
 		builder.Services.AddSingleton<IProtectedKeyValueStore, MauiSecureStorageProtectedKeyValueStore>();
