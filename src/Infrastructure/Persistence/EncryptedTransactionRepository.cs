@@ -45,6 +45,45 @@ public sealed class EncryptedTransactionRepository : ITransactionRepository
         }
     }
 
+    public async Task SaveManyAsync(
+        IReadOnlyList<FinancialTransaction> transactions,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(transactions);
+
+        if (transactions.Count == 0)
+        {
+            return;
+        }
+
+        await writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var stored = await LoadTransactionsAsync(cancellationToken).ConfigureAwait(false);
+
+            foreach (var transaction in transactions)
+            {
+                ArgumentNullException.ThrowIfNull(transaction);
+
+                var existingIndex = stored.FindIndex(existing => existing.Id == transaction.Id);
+                if (existingIndex >= 0)
+                {
+                    stored[existingIndex] = transaction;
+                }
+                else
+                {
+                    stored.Add(transaction);
+                }
+            }
+
+            await store.SaveAsync(PartitionKey, stored, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            writeLock.Release();
+        }
+    }
+
     public async Task<FinancialTransaction?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default)

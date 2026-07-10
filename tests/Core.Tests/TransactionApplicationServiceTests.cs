@@ -215,6 +215,33 @@ public sealed class TransactionApplicationServiceTests
             }
         }
 
+        public Task SaveManyAsync(
+            IReadOnlyList<FinancialTransaction> transactionsToSave,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(transactionsToSave);
+
+            lock (syncRoot)
+            {
+                foreach (var transaction in transactionsToSave)
+                {
+                    SavedTransactions.Add(transaction);
+
+                    var existingIndex = transactions.FindIndex(existing => existing.Id == transaction.Id);
+                    if (existingIndex >= 0)
+                    {
+                        transactions[existingIndex] = transaction;
+                    }
+                    else
+                    {
+                        transactions.Add(transaction);
+                    }
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
         public Task<FinancialTransaction?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             lock (syncRoot)

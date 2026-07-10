@@ -4,6 +4,10 @@ public interface ITransactionRepository
 {
     Task SaveAsync(FinancialTransaction transaction, CancellationToken cancellationToken = default);
 
+    Task SaveManyAsync(
+        IReadOnlyList<FinancialTransaction> transactions,
+        CancellationToken cancellationToken = default);
+
     Task<FinancialTransaction?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<FinancialTransaction>> ListAsync(

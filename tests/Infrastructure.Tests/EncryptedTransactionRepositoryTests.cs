@@ -91,6 +91,90 @@ public sealed class EncryptedTransactionRepositoryTests
     }
 
     [TestMethod]
+    public async Task SaveManyAsync_PersistsAllTransactions()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var repository = NewRepository(directory.Path);
+        var first = NewTransaction(
+            Guid.Parse("77777777-7777-7777-7777-000000000001"),
+            new DateTimeOffset(2026, 7, 9, 10, 0, 0, TimeSpan.Zero),
+            merchant: "REDACTED STORE",
+            category: "Groceries",
+            amount: 100m);
+        var second = NewTransaction(
+            Guid.Parse("77777777-7777-7777-7777-000000000002"),
+            new DateTimeOffset(2026, 7, 9, 11, 0, 0, TimeSpan.Zero),
+            merchant: "REDACTED SCHOOL",
+            category: "Education",
+            amount: 200m);
+
+        await repository.SaveManyAsync([first, second]);
+
+        var transactions = await repository.ListAsync(
+            new DateOnly(2026, 7, 1),
+            new DateOnly(2026, 7, 31));
+
+        CollectionAssert.AreEquivalent(
+            new[] { first.Id, second.Id },
+            transactions.Select(transaction => transaction.Id).ToArray());
+    }
+
+    [TestMethod]
+    public async Task SaveManyAsync_ExistingId_UpsertsWithoutDuplicate()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var repository = NewRepository(directory.Path);
+        var id = Guid.Parse("77777777-7777-7777-7777-000000000003");
+        var original = NewTransaction(
+            id,
+            new DateTimeOffset(2026, 7, 9, 10, 0, 0, TimeSpan.Zero),
+            merchant: "REDACTED STORE",
+            category: "Groceries",
+            amount: 100m);
+        var updated = NewTransaction(
+            id,
+            new DateTimeOffset(2026, 7, 10, 9, 0, 0, TimeSpan.Zero),
+            merchant: "REDACTED SCHOOL",
+            category: "Education",
+            amount: 250m);
+
+        await repository.SaveAsync(original);
+        await repository.SaveManyAsync([updated]);
+
+        var transactions = await repository.ListAsync(
+            new DateOnly(2026, 7, 1),
+            new DateOnly(2026, 7, 31));
+
+        var transaction = Assert.ContainsSingle(transactions);
+        Assert.AreEqual(updated, transaction);
+    }
+
+    [TestMethod]
+    public async Task SaveManyAsync_NullTransactions_Throws()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var repository = NewRepository(directory.Path);
+
+        await Assert.ThrowsExactlyAsync<ArgumentNullException>(async () =>
+            await repository.SaveManyAsync(null!));
+    }
+
+    [TestMethod]
+    public async Task SaveManyAsync_EmptyBatch_PersistsNothing()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var repository = NewRepository(directory.Path);
+
+        await repository.SaveManyAsync([]);
+
+        var transactions = await repository.ListAsync(
+            new DateOnly(2026, 7, 1),
+            new DateOnly(2026, 7, 31));
+
+        Assert.IsEmpty(transactions);
+    }
+
+    [TestMethod]
     public async Task ListAsync_InclusiveDateRange_ReturnsDeterministicOrder()
     {
         using var directory = TemporaryDirectory.Create();
