@@ -6,6 +6,10 @@ agent: "AI Team Lead"
 
 Review the current changes using the relevant HasbeMaal AI team roles.
 
+Use one reviewer by default. Add more only when the change is cross-boundary, privacy/SMS/storage/cloud/telemetry/security-sensitive, CI/release-related, public docs/security-related, or architectural.
+
+Review-only agents should not run builds or tests unless explicitly asked. Recommend validation from the focused budget instead.
+
 Focus on:
 - Behavioral regressions and missing tests.
 - Privacy, PII, raw SMS, telemetry, AI, and cloud risks.
