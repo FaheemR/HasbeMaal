@@ -5,38 +5,48 @@
              x:Class="HasbeMaal.Mobile.Views.TransactionsPage"
              x:DataType="vm:TransactionsViewModel"
              Title="Transactions">
-    <Grid Padding="24" RowDefinitions="Auto,*">
-        <VerticalStackLayout Spacing="8">
-            <Label Text="Transactions" FontSize="28" FontAttributes="Bold" />
-            <Label Text="Grouped by month and category." />
+    <Grid RowDefinitions="Auto,*" Style="{StaticResource PageListLayout}">
+        <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
+            <Label Text="Transactions" Style="{StaticResource PageTitle}" />
+            <Label Text="Grouped by month with clear amounts, dates, and direction." Style="{StaticResource PageSubtitle}" />
         </VerticalStackLayout>
 
         <CollectionView Grid.Row="1"
-                        Margin="0,16,0,0"
                         ItemsSource="{Binding Groups}"
                         IsGrouped="True"
                         SelectionMode="None">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+            </CollectionView.ItemsLayout>
             <CollectionView.EmptyView>
-                <VerticalStackLayout Padding="0,32" Spacing="8">
-                    <Label Text="No transactions yet" FontSize="18" FontAttributes="Bold" />
-                    <Label Text="Manual entries and imports will appear here." />
-                </VerticalStackLayout>
+                <Border Style="{StaticResource EmptyStateBorder}">
+                    <VerticalStackLayout Style="{StaticResource EmptyStateLayout}">
+                        <Label Text="No transactions yet" Style="{StaticResource SectionTitle}" />
+                        <Label Text="Manual entries and local imports will appear here." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </Border>
             </CollectionView.EmptyView>
             <CollectionView.GroupHeaderTemplate>
                 <DataTemplate x:DataType="vm:TransactionGroupViewModel">
                     <Label Text="{Binding Title}"
                            Padding="0,18,0,8"
-                           FontAttributes="Bold" />
+                           Style="{StaticResource SectionTitle}" />
                 </DataTemplate>
             </CollectionView.GroupHeaderTemplate>
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="vm:TransactionListItemViewModel">
-                    <Grid Padding="0,10" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                        <Label Text="{Binding Merchant}" FontAttributes="Bold" />
-                        <Label Grid.Column="1" Text="{Binding AmountText}" />
-                        <Label Grid.Row="1" Text="{Binding OccurredOn}" FontSize="12" />
-                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding DirectionText}" FontSize="12" />
-                    </Grid>
+                    <Border Style="{StaticResource CardBorder}">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+                            <Label Text="{Binding Merchant}" Style="{StaticResource SectionTitle}" FontSize="16" LineBreakMode="TailTruncation" />
+                            <Label Grid.Column="1" Text="{Binding AmountText}" Style="{StaticResource SectionTitle}" FontSize="16" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="1" Text="{Binding OccurredOn}" Style="{StaticResource MutedLabel}" />
+                            <Border Grid.Row="1"
+                                    Grid.Column="1"
+                                    Style="{StaticResource PillBorder}">
+                                <Label Text="{Binding DirectionText}" Style="{StaticResource ChipLabel}" />
+                            </Border>
+                        </Grid>
+                    </Border>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

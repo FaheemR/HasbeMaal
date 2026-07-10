@@ -5,33 +5,73 @@
 
     <!-- Note: For Android please see also Platforms\Android\Resources\values\colors.xml -->
 
-    <Color x:Key="Primary">#512BD4</Color>
-    <Color x:Key="PrimaryDark">#ac99ea</Color>
-    <Color x:Key="PrimaryDarkText">#242424</Color>
-    <Color x:Key="Secondary">#DFD8F7</Color>
-    <Color x:Key="SecondaryDarkText">#9880e5</Color>
-    <Color x:Key="Tertiary">#2B0B98</Color>
+    <Color x:Key="Primary">#1F6B4B</Color>
+    <Color x:Key="PrimarySoft">#DDEBE2</Color>
+    <Color x:Key="PrimarySoftDark">#21382D</Color>
+    <Color x:Key="PrimaryDark">#9FD2B7</Color>
+    <Color x:Key="PrimaryDarkText">#10221A</Color>
+    <Color x:Key="Secondary">#E7F1EA</Color>
+    <Color x:Key="SecondaryDarkText">#A9D4BB</Color>
+    <Color x:Key="Tertiary">#B06A2B</Color>
+
+    <Color x:Key="AppBackground">#F7F5EE</Color>
+    <Color x:Key="AppBackgroundDark">#0F1713</Color>
+    <Color x:Key="Surface">#FFFCF7</Color>
+    <Color x:Key="SurfaceElevated">#FFFFFF</Color>
+    <Color x:Key="SurfaceMuted">#EDF4EE</Color>
+    <Color x:Key="SurfaceDark">#17231D</Color>
+    <Color x:Key="SurfaceElevatedDark">#1B2922</Color>
+    <Color x:Key="SurfaceMutedDark">#223128</Color>
+    <Color x:Key="Ink">#13231B</Color>
+    <Color x:Key="InkMuted">#617166</Color>
+    <Color x:Key="InkMutedDark">#B8C8BE</Color>
+    <Color x:Key="BorderSubtle">#D9E3DA</Color>
+    <Color x:Key="BorderSubtleDark">#35463B</Color>
+    <Color x:Key="Accent">#B06A2B</Color>
+    <Color x:Key="AccentSoft">#F5E8D6</Color>
+    <Color x:Key="Danger">#B3261E</Color>
+    <Color x:Key="DangerSoft">#FCE7E4</Color>
+    <Color x:Key="Transparent">Transparent</Color>
 
     <Color x:Key="White">White</Color>
     <Color x:Key="Black">Black</Color>
-    <Color x:Key="Magenta">#D600AA</Color>
-    <Color x:Key="MidnightBlue">#190649</Color>
-    <Color x:Key="OffBlack">#1f1f1f</Color>
+    <Color x:Key="Magenta">#B06A2B</Color>
+    <Color x:Key="MidnightBlue">#13231B</Color>
+    <Color x:Key="OffBlack">#0F1713</Color>
 
-    <Color x:Key="Gray100">#E1E1E1</Color>
-    <Color x:Key="Gray200">#C8C8C8</Color>
-    <Color x:Key="Gray300">#ACACAC</Color>
-    <Color x:Key="Gray400">#919191</Color>
-    <Color x:Key="Gray500">#6E6E6E</Color>
-    <Color x:Key="Gray600">#404040</Color>
-    <Color x:Key="Gray900">#212121</Color>
-    <Color x:Key="Gray950">#141414</Color>
+    <Color x:Key="Gray100">#EDF4EE</Color>
+    <Color x:Key="Gray200">#D9E3DA</Color>
+    <Color x:Key="Gray300">#B8C8BE</Color>
+    <Color x:Key="Gray400">#8FA195</Color>
+    <Color x:Key="Gray500">#617166</Color>
+    <Color x:Key="Gray600">#35463B</Color>
+    <Color x:Key="Gray900">#13231B</Color>
+    <Color x:Key="Gray950">#0F1713</Color>
 
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
+    <SolidColorBrush x:Key="PrimarySoftBrush" Color="{StaticResource PrimarySoft}"/>
+    <SolidColorBrush x:Key="PrimarySoftDarkBrush" Color="{StaticResource PrimarySoftDark}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
     <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
     <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource White}"/>
     <SolidColorBrush x:Key="BlackBrush" Color="{StaticResource Black}"/>
+    <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackground}"/>
+    <SolidColorBrush x:Key="AppBackgroundDarkBrush" Color="{StaticResource AppBackgroundDark}"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource Surface}"/>
+    <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="{StaticResource SurfaceElevated}"/>
+    <SolidColorBrush x:Key="SurfaceDarkBrush" Color="{StaticResource SurfaceDark}"/>
+    <SolidColorBrush x:Key="SurfaceElevatedDarkBrush" Color="{StaticResource SurfaceElevatedDark}"/>
+    <SolidColorBrush x:Key="SurfaceMutedBrush" Color="{StaticResource SurfaceMuted}"/>
+    <SolidColorBrush x:Key="SurfaceMutedDarkBrush" Color="{StaticResource SurfaceMutedDark}"/>
+    <SolidColorBrush x:Key="InkBrush" Color="{StaticResource Ink}"/>
+    <SolidColorBrush x:Key="InkMutedBrush" Color="{StaticResource InkMuted}"/>
+    <SolidColorBrush x:Key="InkMutedDarkBrush" Color="{StaticResource InkMutedDark}"/>
+    <SolidColorBrush x:Key="BorderSubtleBrush" Color="{StaticResource BorderSubtle}"/>
+    <SolidColorBrush x:Key="BorderSubtleDarkBrush" Color="{StaticResource BorderSubtleDark}"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Accent}"/>
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="{StaticResource AccentSoft}"/>
+    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource Danger}"/>
+    <SolidColorBrush x:Key="DangerSoftBrush" Color="{StaticResource DangerSoft}"/>
 
     <SolidColorBrush x:Key="Gray100Brush" Color="{StaticResource Gray100}"/>
     <SolidColorBrush x:Key="Gray200Brush" Color="{StaticResource Gray200}"/>

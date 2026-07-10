@@ -6,40 +6,49 @@
              x:DataType="vm:ManualTransactionEntryViewModel"
              Title="Add Transaction">
     <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="16">
-            <Label Text="Add transaction" FontSize="28" FontAttributes="Bold" />
-
-            <VerticalStackLayout Spacing="6">
-                <Label Text="Amount" />
-                <Entry Text="{Binding Amount}"
-                       Keyboard="Numeric"
-                       Placeholder="125.75" />
-                <Label Text="{Binding AmountError}" TextColor="#B42318" />
+        <VerticalStackLayout Style="{StaticResource PageContentLayout}">
+            <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
+                <Label Text="Add transaction" Style="{StaticResource PageTitle}" />
+                <Label Text="Create a structured entry without storing raw message content." Style="{StaticResource PageSubtitle}" />
             </VerticalStackLayout>
 
-            <VerticalStackLayout Spacing="6">
-                <Label Text="Merchant or note" />
-                <Entry Text="{Binding Merchant}"
-                       Placeholder="REDACTED STORE" />
-                <Label Text="{Binding MerchantError}" TextColor="#B42318" />
-            </VerticalStackLayout>
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Style="{StaticResource CardContentLayout}" Spacing="16">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Amount" Style="{StaticResource FieldLabel}" />
+                        <Entry Text="{Binding Amount}"
+                               Keyboard="Numeric"
+                               Placeholder="Amount" />
+                        <Label Text="{Binding AmountError}" Style="{StaticResource ErrorLabel}" />
+                    </VerticalStackLayout>
 
-            <VerticalStackLayout Spacing="6">
-                <Label Text="Category" />
-                <Entry Text="{Binding Category}"
-                       Placeholder="Groceries" />
-                <Label Text="{Binding CategoryError}" TextColor="#B42318" />
-            </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Merchant or note" Style="{StaticResource FieldLabel}" />
+                        <Entry Text="{Binding Merchant}"
+                               Placeholder="Merchant or note" />
+                        <Label Text="{Binding MerchantError}" Style="{StaticResource ErrorLabel}" />
+                    </VerticalStackLayout>
 
-            <VerticalStackLayout Spacing="6">
-                <Label Text="Date" />
-                <DatePicker Date="{Binding OccurredOn}" />
-            </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Category" Style="{StaticResource FieldLabel}" />
+                        <Entry Text="{Binding Category}"
+                               Placeholder="Category" />
+                        <Label Text="{Binding CategoryError}" Style="{StaticResource ErrorLabel}" />
+                    </VerticalStackLayout>
 
-            <HorizontalStackLayout Spacing="12">
-                <CheckBox IsChecked="{Binding IsCredit}" />
-                <Label Text="Money received" VerticalOptions="Center" />
-            </HorizontalStackLayout>
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Date" Style="{StaticResource FieldLabel}" />
+                        <DatePicker Date="{Binding OccurredOn}" />
+                    </VerticalStackLayout>
+
+                    <Border Style="{StaticResource InsetPanelBorder}">
+                        <HorizontalStackLayout Spacing="12">
+                            <CheckBox IsChecked="{Binding IsCredit}" />
+                            <Label Text="Money received" Style="{StaticResource ChipLabel}" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+            </Border>
 
             <Button Text="Save entry" Command="{Binding SaveCommand}" />
         </VerticalStackLayout>

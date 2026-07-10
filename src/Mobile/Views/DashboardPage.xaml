@@ -4,10 +4,48 @@
              x:Class="HasbeMaal.Mobile.Views.DashboardPage"
              Title="Dashboard">
     <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="16">
-            <Label Text="HasbeMaal" FontSize="32" FontAttributes="Bold" />
-            <Label Text="Local-first family finance tracking." FontSize="18" />
-            <Label Text="Next: connect parser results, monthly totals, and goal progress." />
+        <VerticalStackLayout Style="{StaticResource PageContentLayout}">
+            <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
+                <Label Text="Dashboard" Style="{StaticResource PageTitle}" />
+                <Label Text="Local-first family finance, kept calm and readable." Style="{StaticResource PageSubtitle}" />
+            </VerticalStackLayout>
+
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Style="{StaticResource CardContentLayout}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Monthly snapshot" Style="{StaticResource SectionTitle}" />
+                            <Label Text="Spending, income, and budget progress will appear here once transactions are available." Style="{StaticResource MutedLabel}" />
+                        </VerticalStackLayout>
+                        <Border Grid.Column="1"
+                                Style="{StaticResource PillBorder}">
+                            <Label Text="Local" Style="{StaticResource ChipLabel}" />
+                        </Border>
+                    </Grid>
+
+                    <Border Style="{StaticResource EmptyStateBorder}">
+                        <VerticalStackLayout Style="{StaticResource EmptyStateLayout}">
+                            <Label Text="No activity yet" Style="{StaticResource SectionTitle}" />
+                            <Label Text="Add a manual entry or enable local imports when you are ready." Style="{StaticResource MutedLabel}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+            </Border>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Privacy" Style="{StaticResource SectionTitle}" />
+                        <Label Text="Raw SMS storage stays off by default." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Planning" Style="{StaticResource SectionTitle}" />
+                        <Label Text="Budgets and goals remain separate from transaction entry." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

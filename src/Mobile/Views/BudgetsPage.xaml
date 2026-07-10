@@ -5,39 +5,48 @@
              x:Class="HasbeMaal.Mobile.Views.BudgetsPage"
              x:DataType="vm:BudgetsViewModel"
              Title="Budgets">
-    <Grid Padding="24" RowDefinitions="Auto,*">
-        <VerticalStackLayout Spacing="8">
-            <Label Text="Budgets" FontSize="28" FontAttributes="Bold" />
-            <Label Text="Monthly category progress appears here after budget data is available." />
+    <Grid RowDefinitions="Auto,*" Style="{StaticResource PageListLayout}">
+        <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
+            <Label Text="Budgets" Style="{StaticResource PageTitle}" />
+            <Label Text="Monthly category progress with remaining room at a glance." Style="{StaticResource PageSubtitle}" />
         </VerticalStackLayout>
 
         <CollectionView Grid.Row="1"
-                        Margin="0,16,0,0"
                         ItemsSource="{Binding Items}"
                         SelectionMode="None">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="12" />
+            </CollectionView.ItemsLayout>
             <CollectionView.EmptyView>
-                <VerticalStackLayout Padding="0,32" Spacing="8">
-                    <Label Text="No budget progress yet" FontSize="18" FontAttributes="Bold" />
-                    <Label Text="Budget categories and monthly spending totals will appear here." />
-                </VerticalStackLayout>
+                <Border Style="{StaticResource EmptyStateBorder}">
+                    <VerticalStackLayout Style="{StaticResource EmptyStateLayout}">
+                        <Label Text="No budget progress yet" Style="{StaticResource SectionTitle}" />
+                        <Label Text="Budget categories and monthly spending totals will appear here." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </Border>
             </CollectionView.EmptyView>
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="vm:BudgetProgressItemViewModel">
-                    <Grid Padding="0,12" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <Label Text="{Binding CategoryName}" FontAttributes="Bold" />
-                            <Label Grid.Column="1" Text="{Binding CategoryTypeText}" FontSize="12" />
+                    <Border Style="{StaticResource CardBorder}">
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Label Text="{Binding CategoryName}" Style="{StaticResource SectionTitle}" FontSize="16" LineBreakMode="TailTruncation" />
+                                <Border Grid.Column="1"
+                                        Style="{StaticResource PillBorder}">
+                                    <Label Text="{Binding CategoryTypeText}" Style="{StaticResource ChipLabel}" />
+                                </Border>
+                            </Grid>
+                            <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Label Text="{Binding SpentText}" Style="{StaticResource MutedLabel}" />
+                                <Label Grid.Column="1" Text="{Binding LimitText}" Style="{StaticResource MutedLabel}" HorizontalTextAlignment="End" />
+                            </Grid>
+                            <ProgressBar Grid.Row="2" Progress="{Binding Progress}" HeightRequest="6" />
+                            <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Label Text="{Binding RemainingText}" Style="{StaticResource MutedLabel}" />
+                                <Label Grid.Column="1" Text="{Binding StatusText}" Style="{StaticResource ChipLabel}" HorizontalTextAlignment="End" />
+                            </Grid>
                         </Grid>
-                        <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
-                            <Label Text="{Binding SpentText}" />
-                            <Label Grid.Column="1" Text="{Binding LimitText}" />
-                        </Grid>
-                        <ProgressBar Grid.Row="2" Progress="{Binding Progress}" />
-                        <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
-                            <Label Text="{Binding RemainingText}" FontSize="12" />
-                            <Label Grid.Column="1" Text="{Binding StatusText}" FontSize="12" />
-                        </Grid>
-                    </Grid>
+                    </Border>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
