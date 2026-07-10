@@ -47,6 +47,8 @@ public partial class AppShell : Shell
 			SetContentTemplate("Settings", () =>
 				serviceProvider.GetRequiredService<SettingsPage>());
 
+			Routing.RegisterRoute("SmsImport", typeof(SmsImportPage));
+
 			Navigating += OnNavigating;
 			Navigated += OnNavigated;
 		}

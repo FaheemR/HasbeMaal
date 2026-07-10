@@ -80,6 +80,7 @@ public static class MauiProgram
 				services.GetRequiredService<ILogger<LoggingEncryptedStore>>()));
 		builder.Services.AddSingleton<ITransactionRepository, EncryptedTransactionRepository>();
 		builder.Services.AddSingleton<IMonthlyBudgetCategoryRepository, EncryptedMonthlyBudgetCategoryRepository>();
+		builder.Services.AddSingleton<ISmsTransactionImporter, SmsTransactionImporter>();
 		builder.Services.AddSingleton<TransactionApplicationService>();
 		builder.Services.AddSingleton<ITransactionApplicationService>(services =>
 			new LoggingTransactionApplicationService(
@@ -94,12 +95,14 @@ public static class MauiProgram
 		builder.Services.AddTransient<TransactionsViewModel>();
 		builder.Services.AddTransient<BudgetsViewModel>();
 		builder.Services.AddTransient<SmsPermissionConsentViewModel>();
+		builder.Services.AddTransient<SmsImportViewModel>();
 		builder.Services.AddTransient<DashboardPage>();
 		builder.Services.AddTransient<TransactionsPage>();
 		builder.Services.AddTransient<ManualEntryPage>();
 		builder.Services.AddTransient<BudgetsPage>();
 		builder.Services.AddTransient<GoalsPage>();
 		builder.Services.AddTransient<SettingsPage>();
+		builder.Services.AddTransient<SmsImportPage>();
 
 		LogAndroidStartup("Build", "Started");
 

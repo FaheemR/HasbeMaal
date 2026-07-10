@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HasbeMaal.Presentation.ViewModels;assembly=HasbeMaal.Presentation"
+             x:Class="HasbeMaal.Mobile.Views.SmsImportPage"
+             x:DataType="vm:SmsImportViewModel"
+             SafeAreaEdges="Container, Container, Container, SoftInput"
+             Title="Import from SMS">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Style="{StaticResource PageListLayout}">
+        <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
+            <Label Text="IMPORT" Style="{StaticResource EyebrowLabel}" />
+            <Label Text="Import from SMS" Style="{StaticResource PageTitle}" />
+            <Label Text="Scan allowlisted bank and UPI messages on this device." Style="{StaticResource PageSubtitle}" />
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Grid.Row="1" Spacing="12">
+            <Button Text="Scan messages"
+                    Command="{Binding ImportCommand}" />
+            <Border Style="{StaticResource LoadingStateBorder}"
+                    IsVisible="{Binding IsScanning}">
+                <HorizontalStackLayout Spacing="12">
+                    <ActivityIndicator IsRunning="{Binding IsScanning}"
+                                       VerticalOptions="Center" />
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Reading messages locally" Style="{StaticResource ChipLabel}" />
+                        <Label Text="Matching allowlisted senders without storing raw content." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+
+        <Border Grid.Row="2"
+                Style="{StaticResource HeroCardBorder}"
+                IsVisible="{Binding HasResult}">
+            <VerticalStackLayout Style="{StaticResource CardContentLayout}" Spacing="12">
+                <Label Text="{Binding StatusText}" Style="{StaticResource SectionTitle}" />
+                <FlexLayout Wrap="Wrap" AlignItems="Center">
+                    <Border Style="{StaticResource PillBorder}" Margin="0,0,8,8">
+                        <Label Text="{Binding ReadyCount, StringFormat='{0} ready'}" Style="{StaticResource ChipLabel}" />
+                    </Border>
+                    <Border Style="{StaticResource PillBorder}" Margin="0,0,8,8">
+                        <Label Text="{Binding NeedsReviewCount, StringFormat='{0} to review'}" Style="{StaticResource ChipLabel}" />
+                    </Border>
+                    <Border Style="{StaticResource PillBorder}" Margin="0,0,8,8">
+                        <Label Text="{Binding DuplicateCount, StringFormat='{0} duplicate'}" Style="{StaticResource ChipLabel}" />
+                    </Border>
+                    <Border Style="{StaticResource PillBorder}" Margin="0,0,8,8">
+                        <Label Text="{Binding IgnoredCount, StringFormat='{0} ignored'}" Style="{StaticResource ChipLabel}" />
+                    </Border>
+                </FlexLayout>
+            </VerticalStackLayout>
+        </Border>
+
+        <VerticalStackLayout Grid.Row="3"
+                             Spacing="12"
+                             IsVisible="{Binding HasResult}">
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Confidence" Style="{StaticResource FieldLabel}" />
+                <Border Style="{StaticResource InputChromeBorder}">
+                    <Picker x:Name="ConfidenceFilterPicker"
+                            SelectedIndex="0"
+                            SelectedIndexChanged="OnConfidenceFilterChanged">
+                        <Picker.Items>
+                            <x:String>All</x:String>
+                            <x:String>Medium</x:String>
+                            <x:String>Low</x:String>
+                        </Picker.Items>
+                    </Picker>
+                </Border>
+            </VerticalStackLayout>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Button Text="Accept selected"
+                        Command="{Binding AcceptSelectedCommand}" />
+                <Button Grid.Column="1"
+                        Text="Reject selected"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding RejectSelectedCommand}" />
+            </Grid>
+        </VerticalStackLayout>
+
+        <CollectionView Grid.Row="4"
+                        ItemsSource="{Binding ReviewGroups}"
+                        IsGrouped="True"
+                        SelectionMode="None">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.EmptyView>
+                <Border Style="{StaticResource EmptyAffordanceBorder}"
+                        VerticalOptions="Start">
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="REVIEW QUEUE" Style="{StaticResource EyebrowLabel}" />
+                        <Label Text="No messages need review" Style="{StaticResource SectionTitle}" />
+                        <Label Text="Scan messages to surface medium and low confidence matches here." Style="{StaticResource MutedLabel}" />
+                    </VerticalStackLayout>
+                </Border>
+            </CollectionView.EmptyView>
+            <CollectionView.GroupHeaderTemplate>
+                <DataTemplate x:DataType="vm:SmsImportReviewGroupViewModel">
+                    <Label Text="{Binding Title}"
+                           Padding="0,18,0,8"
+                           Style="{StaticResource SectionTitle}" />
+                </DataTemplate>
+            </CollectionView.GroupHeaderTemplate>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:SmsImportReviewItemViewModel">
+                    <Border Style="{StaticResource CardBorder}">
+                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8">
+                            <CheckBox Grid.RowSpan="3"
+                                      IsChecked="{Binding IsSelected}"
+                                      VerticalOptions="Center" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding Merchant}"
+                                   Style="{StaticResource SectionTitle}"
+                                   FontSize="16"
+                                   LineBreakMode="TailTruncation" />
+                            <Label Grid.Column="2"
+                                   Text="{Binding AmountText}"
+                                   Style="{StaticResource SectionTitle}"
+                                   FontSize="16"
+                                   HorizontalTextAlignment="End" />
+                            <Label Grid.Row="1"
+                                   Grid.Column="1"
+                                   Grid.ColumnSpan="2"
+                                   Text="{Binding OccurredOn}"
+                                   Style="{StaticResource MutedLabel}" />
+                            <HorizontalStackLayout Grid.Row="2"
+                                                   Grid.Column="1"
+                                                   Grid.ColumnSpan="2"
+                                                   Spacing="8">
+                                <Border Style="{StaticResource PillBorder}">
+                                    <Label Text="{Binding DirectionText}" Style="{StaticResource ChipLabel}" />
+                                </Border>
+                                <Border Style="{StaticResource PillBorder}">
+                                    <Label Text="{Binding ConfidenceText}" Style="{StaticResource ChipLabel}" />
+                                </Border>
+                            </HorizontalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

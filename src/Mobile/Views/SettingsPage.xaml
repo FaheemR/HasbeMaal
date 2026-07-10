@@ -44,6 +44,10 @@
                                 Command="{Binding OpenAppSettingsCommand}"
                                 IsEnabled="{Binding CanOpenAppSettings}" />
                     </VerticalStackLayout>
+                    <Button x:Name="ImportFromSmsButton"
+                            Text="Import from SMS"
+                            Style="{StaticResource SecondaryButton}"
+                            Clicked="OnImportFromSmsClicked" />
                 </VerticalStackLayout>
             </Border>
 

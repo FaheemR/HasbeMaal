@@ -222,6 +222,11 @@ public sealed class SmsImportViewModel : ViewModelBase
         pendingReview = pendingReview.Where(candidate => !removed.Contains(candidate)).ToList();
         NeedsReviewCount = pendingReview.Count;
         RebuildReviewGroups();
+
+        if (HasResult)
+        {
+            StatusText = FormatResultSummary();
+        }
     }
 
     private void RebuildReviewGroups()

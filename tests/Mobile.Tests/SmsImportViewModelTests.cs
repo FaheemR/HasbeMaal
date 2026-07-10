@@ -228,6 +228,58 @@ public sealed class SmsImportViewModelTests
     }
 
     [TestMethod]
+    public async Task AcceptSelectedAsync_UpdatesStatusTextToReducedReviewCount()
+    {
+        var accepted = NewCandidate("REDACTED CAFE", "Dining", 42m, Utc(2026, 7, 9), ParseConfidence.Medium);
+        var kept = NewCandidate("REDACTED STORE", "Groceries", 80m, Utc(2026, 7, 5), ParseConfidence.Low);
+        var importer = new FakeSmsTransactionImporter
+        {
+            Result = new SmsImportResult(
+                Ready: [NewTransaction("REDACTED SHOP", "Groceries", 100m, Utc(2026, 7, 10))],
+                NeedsReview: [accepted, kept],
+                DuplicateCount: 2,
+                IgnoredCount: 3,
+                Watermark: null)
+        };
+        var viewModel = NewViewModel(GrantedPermission(), new FakeSmsInboxReader(), importer);
+
+        await viewModel.ImportAsync();
+        Assert.AreEqual("1 imported, 2 to review, 2 duplicate, 3 ignored.", viewModel.StatusText);
+
+        SelectItem(viewModel, "2026 July - REDACTED CAFE");
+        await viewModel.AcceptSelectedAsync();
+
+        Assert.AreEqual(1, viewModel.NeedsReviewCount);
+        Assert.AreEqual("1 imported, 1 to review, 2 duplicate, 3 ignored.", viewModel.StatusText);
+    }
+
+    [TestMethod]
+    public async Task RejectSelected_UpdatesStatusTextToReducedReviewCount()
+    {
+        var rejected = NewCandidate("REDACTED CAFE", "Dining", 42m, Utc(2026, 7, 9), ParseConfidence.Medium);
+        var kept = NewCandidate("REDACTED STORE", "Groceries", 80m, Utc(2026, 7, 5), ParseConfidence.Low);
+        var importer = new FakeSmsTransactionImporter
+        {
+            Result = new SmsImportResult(
+                Ready: [],
+                NeedsReview: [rejected, kept],
+                DuplicateCount: 0,
+                IgnoredCount: 1,
+                Watermark: null)
+        };
+        var viewModel = NewViewModel(GrantedPermission(), new FakeSmsInboxReader(), importer);
+
+        await viewModel.ImportAsync();
+        Assert.AreEqual("0 imported, 2 to review, 0 duplicate, 1 ignored.", viewModel.StatusText);
+
+        SelectItem(viewModel, "2026 July - REDACTED CAFE");
+        viewModel.RejectSelectedCommand.Execute(null);
+
+        Assert.AreEqual(1, viewModel.NeedsReviewCount);
+        Assert.AreEqual("0 imported, 1 to review, 0 duplicate, 1 ignored.", viewModel.StatusText);
+    }
+
+    [TestMethod]
     public async Task RejectSelected_RemovesSelectedWithoutSaving()
     {
         var applicationService = new CapturingTransactionApplicationService();

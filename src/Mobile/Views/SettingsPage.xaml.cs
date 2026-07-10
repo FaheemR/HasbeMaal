@@ -77,6 +77,24 @@ public partial class SettingsPage : ContentPage
 		}
 	}
 
+	private async void OnImportFromSmsClicked(object? sender, EventArgs e)
+	{
+		logger.LogDebug(
+			"HasbeMaal diagnostic Component={Component} Operation={Operation} Status=Requested Route={Route}",
+			nameof(SettingsPage),
+			nameof(OnImportFromSmsClicked),
+			"SmsImport");
+
+		try
+		{
+			await Shell.Current.GoToAsync("SmsImport");
+		}
+		catch (Exception exception)
+		{
+			logger.LogSanitizedException(nameof(SettingsPage), nameof(OnImportFromSmsClicked), exception);
+		}
+	}
+
 	private async void OnDeleteLocalDataClicked(object? sender, EventArgs e)
 	{
 		logger.LogDebug(
