@@ -1,6 +1,7 @@
 ﻿using HasbeMaal.Core.Application;
 using HasbeMaal.Core.Domain;
 using HasbeMaal.Core.Parsing;
+using HasbeMaal.Core.Planning;
 using HasbeMaal.Infrastructure.Persistence;
 using HasbeMaal.Mobile.Services;
 using HasbeMaal.Mobile.Views;
@@ -44,6 +45,7 @@ public static class MauiProgram
 				Path.Combine(FileSystem.AppDataDirectory, "local-data"),
 				services.GetRequiredService<IEncryptedStoreKeyProvider>()));
 		builder.Services.AddSingleton<ITransactionRepository, EncryptedTransactionRepository>();
+		builder.Services.AddSingleton<IMonthlyBudgetCategoryRepository, EncryptedMonthlyBudgetCategoryRepository>();
 		builder.Services.AddSingleton<ITransactionApplicationService, TransactionApplicationService>();
 		builder.Services.AddSingleton<ILocalDataPurgeService>(_ =>
 			new DirectoryLocalDataPurgeService(Path.Combine(FileSystem.AppDataDirectory, "local-data")));
