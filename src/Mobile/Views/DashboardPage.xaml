@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HasbeMaal.Presentation.ViewModels;assembly=HasbeMaal.Presentation"
              x:Class="HasbeMaal.Mobile.Views.DashboardPage"
+             x:DataType="vm:DashboardViewModel"
              Title="Dashboard">
     <ScrollView>
         <VerticalStackLayout Style="{StaticResource PageContentLayout}">
@@ -15,7 +17,7 @@
                     <Grid ColumnDefinitions="*,Auto">
                         <VerticalStackLayout Spacing="4">
                             <Label Text="Monthly snapshot" Style="{StaticResource SectionTitle}" />
-                            <Label Text="Spending, income, and budget progress will appear here once transactions are available." Style="{StaticResource MutedLabel}" />
+                            <Label Text="{Binding MonthTitle}" Style="{StaticResource MutedLabel}" />
                         </VerticalStackLayout>
                         <Border Grid.Column="1"
                                 Style="{StaticResource PillBorder}">
@@ -23,10 +25,56 @@
                         </Border>
                     </Grid>
 
-                    <Border Style="{StaticResource EmptyStateBorder}">
+                    <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                       IsVisible="{Binding IsLoading}"
+                                       HorizontalOptions="Start" />
+
+                    <VerticalStackLayout Spacing="10">
+                        <Border Style="{StaticResource InsetPanelBorder}">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Label Text="Income" Style="{StaticResource FieldLabel}" />
+                                <Label Grid.Column="1" Text="{Binding IncomeText}" Style="{StaticResource SectionTitle}" FontSize="16" HorizontalTextAlignment="End" />
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource InsetPanelBorder}">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Label Text="Expenses" Style="{StaticResource FieldLabel}" />
+                                <Label Grid.Column="1" Text="{Binding ExpensesText}" Style="{StaticResource SectionTitle}" FontSize="16" HorizontalTextAlignment="End" />
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource InsetPanelBorder}">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <Label Text="{Binding BalanceLabel}" Style="{StaticResource FieldLabel}" />
+                                <Label Grid.Column="1" Text="{Binding BalanceText}" Style="{StaticResource SectionTitle}" FontSize="16" HorizontalTextAlignment="End" />
+                            </Grid>
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <Label Text="{Binding ActivityText}" Style="{StaticResource MutedLabel}" />
+
+                    <Border Style="{StaticResource EmptyStateBorder}"
+                            IsVisible="{Binding IsEmpty}">
                         <VerticalStackLayout Style="{StaticResource EmptyStateLayout}">
                             <Label Text="No activity yet" Style="{StaticResource SectionTitle}" />
                             <Label Text="Add a manual entry or enable local imports when you are ready." Style="{StaticResource MutedLabel}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Style="{StaticResource EmptyStateBorder}"
+                            IsVisible="{Binding HasCategories}">
+                        <VerticalStackLayout Style="{StaticResource EmptyStateLayout}">
+                            <Label Text="Expense categories" Style="{StaticResource SectionTitle}" />
+                            <VerticalStackLayout Spacing="8"
+                                                 BindableLayout.ItemsSource="{Binding Categories}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:DashboardCategorySummaryViewModel">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                            <Label Text="{Binding Category}" Style="{StaticResource MutedLabel}" LineBreakMode="TailTruncation" />
+                                            <Label Grid.Column="1" Text="{Binding ExpensesText}" Style="{StaticResource ChipLabel}" HorizontalTextAlignment="End" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
                         </VerticalStackLayout>
                     </Border>
                 </VerticalStackLayout>
