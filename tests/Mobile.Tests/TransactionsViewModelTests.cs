@@ -1,3 +1,4 @@
+using HasbeMaal.Core.Application;
 using HasbeMaal.Core.Domain;
 using HasbeMaal.Presentation.ViewModels;
 
@@ -9,7 +10,7 @@ public sealed class TransactionsViewModelTests
     [TestMethod]
     public void Load_EmptyTransactions_SetsEmptyState()
     {
-        var viewModel = new TransactionsViewModel();
+        var viewModel = NewViewModel();
 
         viewModel.Load([]);
 
@@ -21,7 +22,7 @@ public sealed class TransactionsViewModelTests
     [TestMethod]
     public void Load_GroupsTransactionsByMonthAndCategory()
     {
-        var viewModel = new TransactionsViewModel();
+        var viewModel = NewViewModel();
         var transactions = new[]
         {
             NewTransaction("REDACTED SCHOOL", "Education", 450m, new DateTimeOffset(2026, 7, 10, 0, 0, 0, TimeSpan.Zero)),
@@ -43,7 +44,7 @@ public sealed class TransactionsViewModelTests
     [TestMethod]
     public void Load_FormatsDebitAndCreditAmounts()
     {
-        var viewModel = new TransactionsViewModel();
+        var viewModel = NewViewModel();
         var transactions = new[]
         {
             NewTransaction("REDACTED STORE", "Groceries", 125.75m, new DateTimeOffset(2026, 7, 8, 0, 0, 0, TimeSpan.Zero)),
@@ -57,6 +58,32 @@ public sealed class TransactionsViewModelTests
         Assert.AreEqual("-125.75 INR", viewModel.Groups[0][1].AmountText);
         Assert.AreEqual("Debit", viewModel.Groups[0][1].DirectionText);
     }
+
+    [TestMethod]
+    public async Task LoadAsync_LoadsTransactionsFromApplicationService()
+    {
+        var transaction = NewTransaction(
+            "REDACTED STORE",
+            "Groceries",
+            125.75m,
+            new DateTimeOffset(2026, 7, 8, 0, 0, 0, TimeSpan.Zero));
+        var applicationService = new ListingTransactionApplicationService([transaction]);
+        var viewModel = NewViewModel(applicationService);
+
+        await viewModel.LoadAsync();
+
+        Assert.AreEqual(1, applicationService.ListCallCount);
+        Assert.AreEqual(DateOnly.MinValue, applicationService.LastFrom);
+        Assert.AreEqual(DateOnly.MaxValue, applicationService.LastTo);
+        Assert.IsFalse(viewModel.IsEmpty);
+        var group = Assert.ContainsSingle(viewModel.Groups);
+        var item = Assert.ContainsSingle(group);
+        Assert.AreEqual("REDACTED STORE", item.Merchant);
+    }
+
+    private static TransactionsViewModel NewViewModel(
+        ListingTransactionApplicationService? applicationService = null) =>
+        new(applicationService ?? new ListingTransactionApplicationService([]));
 
     private static FinancialTransaction NewTransaction(
         string merchant,
@@ -75,4 +102,43 @@ public sealed class TransactionsViewModelTests
             category,
             sourceReferenceHash: null);
     }
+
+    private sealed class ListingTransactionApplicationService : ITransactionApplicationService
+    {
+        private readonly IReadOnlyList<FinancialTransaction> transactions;
+
+        public ListingTransactionApplicationService(IReadOnlyList<FinancialTransaction> transactions)
+        {
+            this.transactions = transactions;
+        }
+
+        public int ListCallCount { get; private set; }
+
+        public DateOnly LastFrom { get; private set; }
+
+        public DateOnly LastTo { get; private set; }
+
+        public Task<TransactionSaveResult> SaveAsync(
+            FinancialTransaction transaction,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(TransactionSaveResult.Saved(transaction));
+
+        public Task<FinancialTransaction?> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(transactions.SingleOrDefault(transaction => transaction.Id == id));
+
+        public Task<IReadOnlyList<FinancialTransaction>> ListAsync(
+            DateOnly from,
+            DateOnly to,
+            CancellationToken cancellationToken = default)
+        {
+            ListCallCount++;
+            LastFrom = from;
+            LastTo = to;
+
+            return Task.FromResult(transactions);
+        }
+    }
+
 }

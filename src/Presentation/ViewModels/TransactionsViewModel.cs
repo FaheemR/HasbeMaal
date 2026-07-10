@@ -1,19 +1,28 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Windows.Input;
+using HasbeMaal.Core.Application;
 using HasbeMaal.Core.Domain;
 
 namespace HasbeMaal.Presentation.ViewModels;
 
 public sealed class TransactionsViewModel : ViewModelBase
 {
+    private readonly ITransactionApplicationService transactionApplicationService;
     private bool isLoading;
 
-    public TransactionsViewModel()
+    public TransactionsViewModel(ITransactionApplicationService transactionApplicationService)
     {
+        ArgumentNullException.ThrowIfNull(transactionApplicationService);
+
+        this.transactionApplicationService = transactionApplicationService;
         Groups = [];
+        RefreshCommand = new AsyncRelayCommand(() => LoadAsync());
     }
 
     public ObservableCollection<TransactionGroupViewModel> Groups { get; }
+
+    public ICommand RefreshCommand { get; }
 
     public bool IsEmpty => !IsLoading && Groups.Count == 0;
 
@@ -57,6 +66,26 @@ public sealed class TransactionsViewModel : ViewModelBase
 
         IsLoading = false;
         OnPropertyChanged(nameof(IsEmpty));
+    }
+
+    public async Task LoadAsync(CancellationToken cancellationToken = default)
+    {
+        IsLoading = true;
+
+        try
+        {
+            var transactions = await transactionApplicationService.ListAsync(
+                DateOnly.MinValue,
+                DateOnly.MaxValue,
+                cancellationToken);
+
+            Load(transactions);
+        }
+        finally
+        {
+            IsLoading = false;
+            OnPropertyChanged(nameof(IsEmpty));
+        }
     }
 
     private static string FormatTitle(DateOnly month, string category)
