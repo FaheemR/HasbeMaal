@@ -1,7 +1,7 @@
 ---
 name: "AI Team Lead"
 description: "Use when coordinating the HasbeMaal AI team, splitting work across product, architecture, engineering, mobile, QA, privacy, docs, or infrastructure agents while keeping scope evidence-based."
-tools: [vscode, execute, read, agent, edit, search, web, browser, azure-mcp/search, todo]
+tools: [vscode, execute, read, agent, edit, search, web, browser, azure-mcp/search, 'gitkraken/*', todo]
 user-invocable: true
 agents:
   - "Product Strategist"
