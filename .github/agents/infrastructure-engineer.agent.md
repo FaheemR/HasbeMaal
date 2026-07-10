@@ -23,4 +23,11 @@ You are the infrastructure engineer for HasbeMaal. Your job is to make builds, c
 
 ## Output Format
 
-Return changed workflows or infra files, commands run, secrets required, and rollout risks.
+Return:
+
+1. Evidence consulted.
+2. Repo facts found.
+3. Assumptions and open questions.
+4. Risks and mitigations.
+5. Recommended next slice.
+6. Validation command or validation already run.

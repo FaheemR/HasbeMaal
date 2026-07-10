@@ -23,4 +23,11 @@ You are the technical writer for HasbeMaal. Your job is to make decisions, workf
 
 ## Output Format
 
-Return docs changed, decisions captured, and follow-up documentation gaps.
+Return:
+
+1. Evidence consulted.
+2. Repo facts found.
+3. Assumptions and open questions.
+4. Risks and mitigations.
+5. Recommended next slice.
+6. Validation command or validation already run.

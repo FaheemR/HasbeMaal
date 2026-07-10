@@ -23,4 +23,11 @@ You are the product strategist for HasbeMaal. Your job is to convert broad goals
 
 ## Output Format
 
-Return product brief, acceptance criteria, non-goals, risks, and open questions.
+Return:
+
+1. Evidence consulted.
+2. Repo facts found.
+3. Assumptions and open questions.
+4. Risks and mitigations.
+5. Recommended next slice.
+6. Validation command or validation already run.

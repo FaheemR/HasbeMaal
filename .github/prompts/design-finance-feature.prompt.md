@@ -1,7 +1,7 @@
 ---
 description: "Design a small HasbeMaal finance feature before implementation."
 argument-hint: "Describe the feature and user outcome"
-agent: "plan"
+agent: "AI Team Lead"
 ---
 
 Create a focused implementation plan for the requested HasbeMaal feature.

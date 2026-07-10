@@ -33,6 +33,18 @@ Agents cannot directly chat with each other. For council-style review, the AI Te
 
 Start a fresh chat or compact after each issue or large slice. Avoid mixing issue implementation, CI triage, and UI design in one long session when separate sessions would keep context clearer.
 
+## New Thread Checklist
+
+Use this checklist at the start of a fresh thread, after compaction, or before continuing issue work:
+
+- Check the current GitHub issue or open issue queue with GitHub or GitKraken tools.
+- Check branch, worktree, commit, push, and remote-sync state before assuming work is complete.
+- State the target issue, commit intent, push intent, focused validation command, and stop condition.
+- Read only the smallest repo evidence needed to make the next slice falsifiable.
+- Use the questions tool for structured user decisions about scope, privacy posture, cloud usage, commit, or push.
+- Work one issue or slice at a time, validate it, update the issue when requested, then hand off or compact.
+- Treat README and the issue tracker as current-state sources; use architecture docs for boundaries and cross-check stale assumptions.
+
 ## Validation Budget
 
 - Core-only changes: `dotnet test tests\Core.Tests\Core.Tests.csproj`.

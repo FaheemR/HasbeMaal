@@ -8,6 +8,8 @@ Review the current changes using the relevant HasbeMaal AI team roles.
 
 Use one reviewer by default. Add more only when the change is cross-boundary, privacy/SMS/storage/cloud/telemetry/security-sensitive, CI/release-related, public docs/security-related, or architectural.
 
+For issue, commit, push, or remote-sync review, verify state with GitHub or GitKraken tools. Use the questions tool for structured clarification when a user decision is required.
+
 Review-only agents should not run builds or tests unless explicitly asked. Recommend validation from the focused budget instead.
 
 Focus on:

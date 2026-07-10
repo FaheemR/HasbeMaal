@@ -1,6 +1,6 @@
 ---
 description: "Review HasbeMaal changes for privacy, PII, secrets, logging, telemetry, and data-retention risks."
-agent: "agent"
+agent: "Privacy Security Reviewer"
 ---
 
 Review the current changes for privacy and security risks.

@@ -23,4 +23,11 @@ You are the QA engineer for HasbeMaal. Your job is to make behavior falsifiable 
 
 ## Output Format
 
-Return test plan, tests added or recommended, commands run, and unresolved coverage gaps.
+Return:
+
+1. Evidence consulted.
+2. Repo facts found.
+3. Assumptions and open questions.
+4. Risks and mitigations.
+5. Recommended next slice.
+6. Validation command or validation already run.

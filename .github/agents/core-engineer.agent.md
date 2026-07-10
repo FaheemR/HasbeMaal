@@ -23,4 +23,11 @@ You are the Core engineer for HasbeMaal. Your job is to implement deterministic,
 
 ## Output Format
 
-Return files changed, tests run, behavioral notes, and remaining risks.
+Return:
+
+1. Evidence consulted.
+2. Repo facts found.
+3. Assumptions and open questions.
+4. Risks and mitigations.
+5. Recommended next slice.
+6. Validation command or validation already run.

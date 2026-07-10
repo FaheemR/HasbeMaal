@@ -1,7 +1,7 @@
 ---
 description: "Create a budget or long-term planning scenario with deterministic assumptions and tests."
 argument-hint: "Describe the budget scenario, goal, time horizon, and assumptions"
-agent: "agent"
+agent: "Core Engineer"
 ---
 
 Implement or plan the requested budget scenario.

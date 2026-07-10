@@ -1,7 +1,7 @@
 ---
 description: "Add or adjust a deterministic SMS transaction parser from synthetic redacted examples."
 argument-hint: "Paste synthetic redacted SMS examples and expected parsed fields"
-agent: "agent"
+agent: "Core Engineer"
 ---
 
 Add or adjust SMS parsing for the provided synthetic redacted examples.

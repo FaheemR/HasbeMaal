@@ -1,7 +1,7 @@
 ---
 description: "Prepare a HasbeMaal release checklist for Android or repository milestones."
 argument-hint: "Describe the release target"
-agent: "agent"
+agent: "Infrastructure Engineer"
 ---
 
 Create a release checklist for the requested target.

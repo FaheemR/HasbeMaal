@@ -8,6 +8,18 @@ Plan the requested implementation slice with the AI team.
 
 Use the fast lane unless the slice crosses project boundaries, changes privacy/SMS/storage/cloud/telemetry/security posture, affects CI/release, updates public docs/security guidance, or makes an architecture decision. Use at most one reviewer by default.
 
+Before implementation, include an issue-first checklist:
+- Target issue or state that no issue is attached.
+- Current branch/worktree status.
+- Commit intent and push intent; do not commit or push unless explicitly requested.
+- Focused validation command.
+- Stop condition for the slice.
+
+Tool rules:
+- Use the questions tool for structured clarification when user decisions are needed.
+- Use GitHub or GitKraken tools for issue, PR, branch, commit, push, and remote-sync state.
+- Treat repo files and issue tracker state as evidence; do not infer completion from handoff text alone.
+
 Include:
 - Product outcome and non-goals.
 - Architecture boundary and affected projects.
