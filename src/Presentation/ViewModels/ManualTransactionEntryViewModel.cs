@@ -19,6 +19,7 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
     private string? amountError;
     private string? merchantError;
     private string? categoryError;
+    private string? saveStatusMessage;
     private FinancialTransaction? lastCreatedTransaction;
 
     public ManualTransactionEntryViewModel(ITransactionApplicationService transactionApplicationService)
@@ -37,6 +38,7 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
         {
             if (SetProperty(ref amount, value))
             {
+                ClearSaveStatusMessage();
                 Validate();
             }
         }
@@ -49,6 +51,7 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
         {
             if (SetProperty(ref merchant, value))
             {
+                ClearSaveStatusMessage();
                 Validate();
             }
         }
@@ -61,6 +64,7 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
         {
             if (SetProperty(ref category, value))
             {
+                ClearSaveStatusMessage();
                 Validate();
             }
         }
@@ -69,13 +73,25 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
     public DateTime OccurredOn
     {
         get => occurredOn;
-        set => SetProperty(ref occurredOn, value.Date);
+        set
+        {
+            if (SetProperty(ref occurredOn, value.Date))
+            {
+                ClearSaveStatusMessage();
+            }
+        }
     }
 
     public bool IsCredit
     {
         get => isCredit;
-        set => SetProperty(ref isCredit, value);
+        set
+        {
+            if (SetProperty(ref isCredit, value))
+            {
+                ClearSaveStatusMessage();
+            }
+        }
     }
 
     public string? AmountError
@@ -97,6 +113,20 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
     }
 
     public bool HasErrors => AmountError is not null || MerchantError is not null || CategoryError is not null;
+
+    public string? SaveStatusMessage
+    {
+        get => saveStatusMessage;
+        private set
+        {
+            if (SetProperty(ref saveStatusMessage, value))
+            {
+                OnPropertyChanged(nameof(HasSaveStatusMessage));
+            }
+        }
+    }
+
+    public bool HasSaveStatusMessage => SaveStatusMessage is not null;
 
     public FinancialTransaction? LastCreatedTransaction
     {
@@ -149,8 +179,32 @@ public sealed class ManualTransactionEntryViewModel : ViewModelBase
             Category,
             sourceReferenceHash: null);
 
-            var saveResult = await transactionApplicationService.SaveAsync(transaction);
+        var saveResult = await transactionApplicationService.SaveAsync(transaction);
+
+        if (saveResult.Status == TransactionSaveStatus.Saved)
+        {
             LastCreatedTransaction = saveResult.Transaction;
+            ResetForm();
+            SaveStatusMessage = "Entry saved.";
+            return;
+        }
+
+        LastCreatedTransaction = null;
+        SaveStatusMessage = "Entry was already saved.";
+    }
+
+    private void ResetForm()
+    {
+        Amount = string.Empty;
+        Merchant = string.Empty;
+        Category = DefaultCategory;
+        OccurredOn = DateTime.Today;
+        IsCredit = false;
+    }
+
+    private void ClearSaveStatusMessage()
+    {
+        SaveStatusMessage = null;
     }
 
     private decimal? ParseAmount()

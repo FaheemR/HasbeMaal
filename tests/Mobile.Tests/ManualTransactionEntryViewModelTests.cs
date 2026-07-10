@@ -17,6 +17,8 @@ public sealed class ManualTransactionEntryViewModelTests
         Assert.IsNotNull(viewModel.AmountError);
         Assert.IsNotNull(viewModel.MerchantError);
         Assert.IsNull(viewModel.CategoryError);
+        Assert.IsNull(viewModel.SaveStatusMessage);
+        Assert.IsFalse(viewModel.HasSaveStatusMessage);
     }
 
     [TestMethod]
@@ -68,6 +70,13 @@ public sealed class ManualTransactionEntryViewModelTests
         Assert.IsNull(transaction.SourceReferenceHash);
         Assert.AreEqual(1, applicationService.SaveCallCount);
         Assert.AreSame(transaction, applicationService.SavedTransactions.Single());
+        Assert.AreEqual(string.Empty, viewModel.Amount);
+        Assert.AreEqual(string.Empty, viewModel.Merchant);
+        Assert.AreEqual("Uncategorized", viewModel.Category);
+        Assert.AreEqual(DateTime.Today, viewModel.OccurredOn);
+        Assert.IsFalse(viewModel.IsCredit);
+        Assert.AreEqual("Entry saved.", viewModel.SaveStatusMessage);
+        Assert.IsTrue(viewModel.HasSaveStatusMessage);
     }
 
     [TestMethod]
@@ -94,6 +103,39 @@ public sealed class ManualTransactionEntryViewModelTests
 
         Assert.IsNull(viewModel.LastCreatedTransaction);
         Assert.AreEqual(0, applicationService.SaveCallCount);
+        Assert.IsNull(viewModel.SaveStatusMessage);
+        Assert.IsFalse(viewModel.HasSaveStatusMessage);
+    }
+
+    [TestMethod]
+    public async Task SaveCommand_DuplicateIgnored_ShowsStatusAndKeepsFormValues()
+    {
+        var applicationService = new CapturingTransactionApplicationService(TransactionSaveStatus.DuplicateIgnored);
+        var viewModel = NewValidViewModel(applicationService);
+
+        await ((AsyncRelayCommand)viewModel.SaveCommand).ExecuteAsync();
+
+        Assert.IsNull(viewModel.LastCreatedTransaction);
+        Assert.AreEqual(1, applicationService.SaveCallCount);
+        Assert.IsEmpty(applicationService.SavedTransactions);
+        Assert.AreEqual("125.75", viewModel.Amount);
+        Assert.AreEqual("REDACTED STORE", viewModel.Merchant);
+        Assert.AreEqual("Groceries", viewModel.Category);
+        Assert.AreEqual(new DateTime(2026, 7, 8), viewModel.OccurredOn);
+        Assert.AreEqual("Entry was already saved.", viewModel.SaveStatusMessage);
+        Assert.IsTrue(viewModel.HasSaveStatusMessage);
+    }
+
+    [TestMethod]
+    public async Task AmountChange_AfterSave_ClearsSaveStatus()
+    {
+        var viewModel = NewValidViewModel();
+
+        await ((AsyncRelayCommand)viewModel.SaveCommand).ExecuteAsync();
+        viewModel.Amount = "99.00";
+
+        Assert.IsNull(viewModel.SaveStatusMessage);
+        Assert.IsFalse(viewModel.HasSaveStatusMessage);
     }
 
     private static ManualTransactionEntryViewModel NewValidViewModel(
@@ -111,6 +153,13 @@ public sealed class ManualTransactionEntryViewModelTests
     private sealed class CapturingTransactionApplicationService : ITransactionApplicationService
     {
         private readonly List<FinancialTransaction> savedTransactions = [];
+        private readonly TransactionSaveStatus saveStatus;
+
+        public CapturingTransactionApplicationService(
+            TransactionSaveStatus saveStatus = TransactionSaveStatus.Saved)
+        {
+            this.saveStatus = saveStatus;
+        }
 
         public int SaveCallCount { get; private set; }
 
@@ -121,8 +170,13 @@ public sealed class ManualTransactionEntryViewModelTests
             CancellationToken cancellationToken = default)
         {
             SaveCallCount++;
-            savedTransactions.Add(transaction);
 
+            if (saveStatus == TransactionSaveStatus.DuplicateIgnored)
+            {
+                return Task.FromResult(TransactionSaveResult.DuplicateIgnored(transaction));
+            }
+
+            savedTransactions.Add(transaction);
             return Task.FromResult(TransactionSaveResult.Saved(transaction));
         }
 

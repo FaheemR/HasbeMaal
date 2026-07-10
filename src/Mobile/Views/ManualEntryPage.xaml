@@ -51,6 +51,9 @@
             </Border>
 
             <Button Text="Save entry" Command="{Binding SaveCommand}" />
+            <Label Text="{Binding SaveStatusMessage}"
+                   Style="{StaticResource ChipLabel}"
+                   IsVisible="{Binding HasSaveStatusMessage}" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>
