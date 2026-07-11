@@ -26,6 +26,8 @@ Logs must never include:
 - UPI IDs.
 - Transaction references.
 - Source reference hashes.
+- Stored original SMS body (SourceMessage).
+- Masked account or card tails (Account).
 - Merchant names from user data.
 - Exact transaction amounts.
 - Exported database paths or local storage paths.

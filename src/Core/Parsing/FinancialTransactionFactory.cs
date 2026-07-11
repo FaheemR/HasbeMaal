@@ -6,9 +6,10 @@ namespace HasbeMaal.Core.Parsing;
 
 /// <summary>
 /// Maps a <see cref="ParsedTransaction"/> to a persistable <see cref="FinancialTransaction"/>.
-/// The raw source <see cref="ParsedTransaction.Reference"/> is never copied onto the domain
-/// transaction; instead it is reduced to a deterministic one-way SHA-256 hash so duplicate
-/// detection can work without retaining the original reference string.
+/// The raw source <see cref="ParsedTransaction.Reference"/> is retained on the domain transaction
+/// as <see cref="FinancialTransaction.SourceReference"/> so it can be shown to the user; it is
+/// stored only inside encrypted persistence, never logged, and removed by delete/purge. The same
+/// reference is also reduced to a deterministic one-way SHA-256 hash used for duplicate detection.
 /// </summary>
 public static class FinancialTransactionFactory
 {
@@ -36,7 +37,10 @@ public static class FinancialTransactionFactory
             parsed.OccurredAt ?? DateTimeOffset.MinValue,
             parsed.Merchant,
             category,
-            HashReference(parsed.Reference));
+            HashReference(parsed.Reference),
+            parsed.Reference,
+            parsed.Account,
+            parsed.SourceMessage);
     }
 
     /// <summary>
@@ -47,8 +51,10 @@ public static class FinancialTransactionFactory
     /// hash of an empty string.
     /// </summary>
     /// <remarks>
-    /// The raw reference is never returned or stored. Only the hex-encoded digest leaves this
-    /// method, preserving privacy while keeping the mapping deterministic.
+    /// Only the hex-encoded digest leaves this method. The raw reference is retained separately on
+    /// <see cref="FinancialTransaction.SourceReference"/> (encrypted at rest, user-only, never
+    /// logged); this hash exists solely so duplicate detection can compare references without
+    /// matching on the raw value.
     /// </remarks>
     public static string? HashReference(string? reference)
     {

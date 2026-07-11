@@ -29,9 +29,10 @@
         <CollectionView Grid.Row="2"
                         ItemsSource="{Binding Groups}"
                         IsGrouped="True"
-                        SelectionMode="None">
+                        SelectionMode="Single"
+                        SelectionChanged="OnTransactionSelected">
             <CollectionView.ItemsLayout>
-                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="0" />
             </CollectionView.ItemsLayout>
             <CollectionView.EmptyView>
                 <Border Style="{StaticResource EmptyAffordanceBorder}"
@@ -54,18 +55,21 @@
             </CollectionView.GroupHeaderTemplate>
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="vm:TransactionListItemViewModel">
-                    <Border Style="{StaticResource CardBorder}">
-                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+                    <VerticalStackLayout Spacing="0">
+                        <Grid Padding="4,12" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="2" ColumnSpacing="12">
                             <Label Text="{Binding Merchant}" Style="{StaticResource SectionTitle}" FontSize="16" LineBreakMode="TailTruncation" />
                             <Label Grid.Column="1" Text="{Binding AmountText}" Style="{StaticResource SectionTitle}" FontSize="16" HorizontalTextAlignment="End" />
                             <Label Grid.Row="1" Text="{Binding OccurredOn}" Style="{StaticResource MutedLabel}" />
-                            <Border Grid.Row="1"
-                                    Grid.Column="1"
-                                    Style="{StaticResource PillBorder}">
-                                <Label Text="{Binding DirectionText}" Style="{StaticResource ChipLabel}" />
-                            </Border>
+                            <Label Grid.Row="1" Grid.Column="1" Text="{Binding DirectionText}" Style="{StaticResource MutedLabel}" HorizontalTextAlignment="End" />
+                            <Label Grid.Row="2"
+                                   Grid.ColumnSpan="2"
+                                   Text="{Binding AccountText}"
+                                   IsVisible="{Binding HasAccount}"
+                                   Style="{StaticResource MutedLabel}"
+                                   LineBreakMode="TailTruncation" />
                         </Grid>
-                    </Border>
+                        <BoxView HeightRequest="1" Color="{AppThemeBinding Light=#E6E6E6, Dark=#2A2A2A}" />
+                    </VerticalStackLayout>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

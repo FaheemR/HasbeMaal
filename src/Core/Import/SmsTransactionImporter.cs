@@ -8,8 +8,9 @@ namespace HasbeMaal.Core.Import;
 /// and review candidates. The algorithm is O(n) in the batch size: existing transactions are
 /// loaded exactly once and duplicate detection uses in-memory hash sets. Only high-confidence,
 /// unique transactions are auto-committed; lower-confidence candidates are returned for review
-/// and are not persisted by this importer. Raw message bodies, senders, and references are never
-/// logged or stored.
+/// and are not persisted by this importer. The original message body of a committed transaction is
+/// retained on it (encrypted at rest downstream, user-only, never logged); message bodies, senders,
+/// and references are never logged.
 /// </summary>
 public sealed class SmsTransactionImporter : ISmsTransactionImporter
 {
@@ -86,7 +87,22 @@ public sealed class SmsTransactionImporter : ISmsTransactionImporter
                 continue;
             }
 
-            parsed = parsed with { OccurredAt = message.ReceivedAt };
+            // Prefer the transaction date stated in the SMS body (for example "on 10-JUL-26"), keeping
+            // the received time of day; fall back to the received timestamp when the body has no date.
+            // The original SMS body is retained on the transaction for on-device display (encrypted,
+            // user-only, never logged, purgeable).
+            var occurredAt = parsed.OccurredOn is { } bodyDate
+                ? new DateTimeOffset(
+                    bodyDate.Year,
+                    bodyDate.Month,
+                    bodyDate.Day,
+                    message.ReceivedAt.Hour,
+                    message.ReceivedAt.Minute,
+                    message.ReceivedAt.Second,
+                    message.ReceivedAt.Offset)
+                : message.ReceivedAt;
+
+            parsed = parsed with { OccurredAt = occurredAt, SourceMessage = message.Body };
             var transaction = FinancialTransactionFactory.Create(parsed);
 
             if (transaction.SourceReferenceHash is not null)

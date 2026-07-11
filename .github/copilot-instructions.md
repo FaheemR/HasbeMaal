@@ -12,7 +12,7 @@
 - Never add real SMS messages, UPI IDs, phone numbers, account numbers, exported databases, screenshots with financial data, or secrets.
 - Use synthetic redacted test fixtures only.
 - Do not log raw SMS, exact transaction trails, account identifiers, merchant names from user data, or secrets.
-- Raw SMS storage must be disabled by default. Any future raw-source diagnostic mode must be explicit, encrypted, and purgeable.
+- The original SMS body of a matched, imported transaction may be stored on-device, encrypted, user-only, excluded from logs/telemetry/export, and purgeable, for local display only. No other raw source identifiers are stored. Any raw SMS or transaction trail leaving the device (cloud, backup, AI, telemetry) remains disabled by default and requires a separate privacy review.
 
 ## Finance Rules
 

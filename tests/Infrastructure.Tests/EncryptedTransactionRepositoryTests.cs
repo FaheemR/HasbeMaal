@@ -1,4 +1,5 @@
 using HasbeMaal.Core.Domain;
+using HasbeMaal.Core.Parsing;
 using HasbeMaal.Infrastructure.Persistence;
 
 namespace HasbeMaal.Infrastructure.Tests;
@@ -375,17 +376,23 @@ public sealed class EncryptedTransactionRepositoryTests
             await repository.SaveAsync(null!));
     }
 
+    private static EncryptedTransactionRepository NewRepository(string directory)
+    {
+        return new EncryptedTransactionRepository(NewStore(directory));
+    }
+
     [TestMethod]
-    public async Task SaveAsync_DoesNotWritePlaintextTransactionFields()
+    public async Task SaveAsync_DoesNotWritePlaintextTransactionFieldsOrRawReference()
     {
         using var directory = TemporaryDirectory.Create();
         var repository = NewRepository(directory.Path);
-        var transaction = NewTransaction(
+        var transaction = NewTransactionWithReference(
             Guid.Parse("44444444-4444-4444-4444-444444444444"),
             new DateTimeOffset(2026, 7, 9, 10, 30, 0, TimeSpan.Zero),
             merchant: "REDACTED STORE",
             category: "Groceries",
-            amount: 125.75m);
+            amount: 125.75m,
+            sourceReference: "SYNTH-UPI-REF-PLAINTEXT");
 
         await repository.SaveAsync(transaction);
 
@@ -395,12 +402,141 @@ public sealed class EncryptedTransactionRepositoryTests
         Assert.DoesNotContain("REDACTED STORE", contents);
         Assert.DoesNotContain("Groceries", contents);
         Assert.DoesNotContain("125.75", contents);
+        Assert.DoesNotContain("SYNTH-UPI-REF-PLAINTEXT", contents);
     }
 
-    private static EncryptedTransactionRepository NewRepository(string directory)
+    [TestMethod]
+    public async Task SaveAsync_ThenGetByIdAsync_RoundTripsRawReference()
     {
-        return new EncryptedTransactionRepository(NewStore(directory));
+        using var directory = TemporaryDirectory.Create();
+        var repository = NewRepository(directory.Path);
+        var transaction = NewTransactionWithReference(
+            Guid.Parse("88888888-8888-8888-8888-888888888888"),
+            new DateTimeOffset(2026, 7, 9, 10, 30, 0, TimeSpan.Zero),
+            merchant: "REDACTED STORE",
+            category: "Groceries",
+            amount: 500m,
+            sourceReference: "SYNTH-UPI-REF-777");
+
+        await repository.SaveAsync(transaction);
+
+        var loaded = await repository.GetByIdAsync(transaction.Id);
+
+        Assert.IsNotNull(loaded);
+        Assert.AreEqual("SYNTH-UPI-REF-777", loaded.SourceReference);
+        Assert.AreEqual(transaction, loaded);
     }
+
+    [TestMethod]
+    public async Task GetByIdAsync_LegacyRecordWithoutReferenceField_LoadsWithNullReference()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var store = NewStore(directory.Path);
+        var legacyId = Guid.Parse("99999999-9999-9999-9999-999999999999");
+        var legacy = new LegacyTransaction(
+            legacyId,
+            new MoneyAmount(75m),
+            TransactionDirection.Debit,
+            TransactionSource.UpiSms,
+            new DateTimeOffset(2026, 7, 1, 8, 0, 0, TimeSpan.Zero),
+            "REDACTED STORE",
+            "Groceries",
+            SourceReferenceHash: "LEGACYHASH");
+
+        // Simulate pre-existing v1 data written before SourceReference existed. The partition key
+        // matches EncryptedTransactionRepository's private "transactions:v1" so the real repository
+        // reads it back through the real store options.
+        await store.SaveAsync("transactions:v1", new List<LegacyTransaction> { legacy });
+        var repository = new EncryptedTransactionRepository(store);
+
+        var loaded = await repository.GetByIdAsync(legacyId);
+
+        Assert.IsNotNull(loaded);
+        Assert.IsNull(loaded.SourceReference);
+        Assert.AreEqual("LEGACYHASH", loaded.SourceReferenceHash);
+        Assert.AreEqual("REDACTED STORE", loaded.Merchant);
+    }
+
+    [TestMethod]
+    public async Task Purge_RemovesStoredRawReference()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var repository = NewRepository(directory.Path);
+        var transaction = NewTransactionWithReference(
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            new DateTimeOffset(2026, 7, 9, 10, 30, 0, TimeSpan.Zero),
+            merchant: "REDACTED STORE",
+            category: "Groceries",
+            amount: 500m,
+            sourceReference: "SYNTH-UPI-REF-PURGE");
+        await repository.SaveAsync(transaction);
+
+        await new DirectoryLocalDataPurgeService(directory.Path).PurgeAsync();
+
+        Assert.IsNull(await repository.GetByIdAsync(transaction.Id));
+        Assert.IsEmpty(Directory.GetFiles(directory.Path));
+    }
+
+    [TestMethod]
+    public async Task SaveAsync_RoundTripsAndEncryptsAccountAndSourceMessage()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var repository = NewRepository(directory.Path);
+        var transaction = new FinancialTransaction(
+            Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+            new MoneyAmount(1234m),
+            TransactionDirection.Credit,
+            TransactionSource.CreditCardSms,
+            new DateTimeOffset(2026, 7, 10, 20, 8, 0, TimeSpan.FromHours(5.5)),
+            "Synthpay",
+            "Uncategorized",
+            sourceReferenceHash: null,
+            sourceReference: null,
+            account: "REDACTED Bank Credit Card ••0000",
+            sourceMessage: "SYNTH ORIGINAL SMS BODY XX0000");
+
+        await repository.SaveAsync(transaction);
+        var loaded = await repository.GetByIdAsync(transaction.Id);
+
+        Assert.IsNotNull(loaded);
+        Assert.AreEqual("REDACTED Bank Credit Card ••0000", loaded.Account);
+        Assert.AreEqual("SYNTH ORIGINAL SMS BODY XX0000", loaded.SourceMessage);
+
+        var file = Assert.ContainsSingle(Directory.GetFiles(directory.Path));
+        var contents = await File.ReadAllTextAsync(file);
+        Assert.DoesNotContain("SYNTH ORIGINAL SMS BODY", contents);
+        Assert.DoesNotContain("••0000", contents);
+    }
+
+    private static FinancialTransaction NewTransactionWithReference(
+        Guid id,
+        DateTimeOffset occurredAt,
+        string merchant,
+        string category,
+        decimal amount,
+        string sourceReference)
+    {
+        return new FinancialTransaction(
+            id,
+            new MoneyAmount(amount),
+            TransactionDirection.Debit,
+            TransactionSource.UpiSms,
+            occurredAt,
+            merchant,
+            category,
+            sourceReferenceHash: FinancialTransactionFactory.HashReference(sourceReference),
+            sourceReference: sourceReference);
+    }
+
+    private sealed record LegacyTransaction(
+        Guid Id,
+        MoneyAmount Amount,
+        TransactionDirection Direction,
+        TransactionSource Source,
+        DateTimeOffset OccurredAt,
+        string Merchant,
+        string Category,
+        string? SourceReferenceHash);
 
     private static FileEncryptedStore NewStore(string directory)
     {

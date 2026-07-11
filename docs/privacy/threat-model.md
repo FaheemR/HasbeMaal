@@ -1,6 +1,6 @@
 # Local MVP Threat Model
 
-Last reviewed: 2026-07-10
+Last reviewed: 2026-07-11
 
 This threat model covers the Local MVP only: Android-first local transaction capture, deterministic parsing, on-device SMS import, manual entries, encrypted local storage, monthly summaries, and category budgets. Cloud sync, cloud backup, telemetry, and AI insights are future/review-required features and must not be treated as in scope until they receive a separate privacy review.
 
@@ -45,13 +45,13 @@ For Android `READ_SMS` permission purpose, consent copy, denial/revocation behav
 1. User grants Android SMS access explicitly, then starts import from the app foreground. There is no background SMS monitoring.
 2. Android platform code reads the SMS inbox (full inbox on the first import, then only messages newer than the stored watermark) and applies a sender allowlist. The allowlist is seeded with common bank and UPI sender IDs and can be extended or reduced by the user. The sender address is used only for allowlist filtering and is dropped before any content leaves the platform boundary.
 3. For each allowlisted message, Android passes only the message body and its received timestamp to Core parser interfaces. Sender identifiers, phone numbers, and account hints are never passed to Core.
-4. Core parses each message deterministically and returns a structured transaction candidate with a confidence level, or no match. The received timestamp becomes the transaction date; a source reference, when present, is reduced to a one-way hash and never stored raw.
+4. Core parses each message deterministically and returns a structured transaction candidate with a confidence level, or no match. The received timestamp becomes the transaction date. A source reference (for example a UPI reference number), when present, is both reduced to a one-way hash for duplicate detection and retained as a raw value on the transaction so it can be shown to the user. The raw reference is encrypted at rest with all other transaction fields, is never written to logs or telemetry, and is removed by the local delete/purge flow.
 5. App services deduplicate the batch against existing transactions and within the batch using two keys: the hashed source reference and a composite key of amount, direction, received timestamp (minute granularity), and normalized merchant. Duplicates are skipped.
 6. High-confidence, non-duplicate candidates are committed to encrypted local persistence in a single user action. Lower-confidence candidates are surfaced for grouped, bulk review before they are committed or discarded; un-actioned candidates remain pending for a later import, subject to a cap.
 7. After a successful import, the watermark advances to the newest processed message so re-running import does not re-scan or re-import earlier messages.
 8. UI reads structured transactions and summaries from app services. Delete and export controls operate on structured local data and any generated local artifacts.
 
-Raw SMS text, sender identifiers, phone numbers, account hints, and raw source references are not stored after parsing. Only structured transaction fields and the stored import watermark persist. Any future raw-source diagnostic mode must be separately reviewed, encrypted, time-limited, and purgeable.
+Raw SMS text is not stored after parsing except for one reviewed exception: the original SMS body of a matched, imported transaction is retained on that transaction, encrypted at rest, shown only on the local transaction detail screen, never logged, never transmitted, and removed by delete/purge. The raw source reference (for example a UPI reference number) and a masked account tail (for example the last four digits of a card) are retained on the transaction under the same rules. Sender identifiers, phone numbers, and separately-extracted account identifiers are still discarded after parsing. Only structured transaction fields, the retained original body, and the stored import watermark persist. Any raw SMS or transaction trail leaving the device (cloud, backup, AI, telemetry) remains disabled by default and requires a separate privacy review.
 
 ### Future, Review-Required
 
@@ -76,7 +76,9 @@ Raw SMS text, sender identifiers, phone numbers, account hints, and raw source r
 | Threat | Risk | Required Mitigations |
 | --- | --- | --- |
 | Real financial data enters the repo, issues, screenshots, or fixtures | Personal financial exposure and permanent history retention | Use only synthetic redacted fixtures, review docs/tests before commit, and remove generated artifacts that may contain user data. |
-| Raw SMS is stored by default | High-sensitivity source data remains on device longer than needed | Store structured fields only, keep raw-source diagnostics disabled by default, and require explicit privacy review for any raw retention. |
+| Raw SMS is stored beyond the reviewed exception | High-sensitivity source data remains on device longer than needed | Retain only the original body of matched, imported transactions (encrypted, user-only, never logged or exported, purge-covered); keep all other raw-source diagnostics disabled by default and require privacy review for any wider retention. |
+| Stored SMS body contains masked account tails, balances, or OTP-adjacent text | Sensitive substrings persist on device | Keep the body only inside encrypted persistence, exclude it from ToString/logs/telemetry/export, render it read-only with no copy or share, and cover it in purge tests. |
+| Stored raw UPI reference is logged, exported to telemetry/AI, or otherwise leaks | User-identifiable payment reference exposure beyond the device | Keep the raw reference only inside encrypted transaction persistence, never log it or include it in telemetry or AI payloads, show it only in the local UI, and cover it in delete/purge tests. |
 | Encrypted storage is bypassed or inconsistently used | Local transaction data may be readable from files or backups | Route real transaction persistence through encrypted storage, verify repository integration before release, and keep unencrypted test stores limited to synthetic data. |
 | Keys or secrets are committed, logged, or stored with encrypted data | Encrypted content can be decrypted by unintended parties | Use platform key stores or developer secret stores, never commit keys, and exclude secrets from diagnostics. |
 | Logs, telemetry, or crash reports include sensitive values | Sensitive data leaves the local trust boundary | Do not log raw SMS, sender identifiers, account hints, transaction references, merchant names from user data, UPI identifiers, phone numbers, or exact transaction trails. |

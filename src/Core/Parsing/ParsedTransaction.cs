@@ -9,4 +9,7 @@ public sealed record ParsedTransaction(
     TransactionDirection Direction,
     TransactionSource Source,
     string? Reference,
-    ParseConfidence Confidence);
+    ParseConfidence Confidence,
+    DateOnly? OccurredOn = null,
+    string? Account = null,
+    string? SourceMessage = null);

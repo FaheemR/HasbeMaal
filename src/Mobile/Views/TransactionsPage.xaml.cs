@@ -76,4 +76,26 @@ public partial class TransactionsPage : ContentPage
 	{
 		await Shell.Current.GoToAsync("//ManualEntry");
 	}
+
+	private async void OnTransactionSelected(object? sender, SelectionChangedEventArgs e)
+	{
+		if (sender is CollectionView collectionView)
+		{
+			collectionView.SelectedItem = null;
+		}
+
+		if (e.CurrentSelection.FirstOrDefault() is not TransactionListItemViewModel item)
+		{
+			return;
+		}
+
+		try
+		{
+			await Shell.Current.GoToAsync($"TransactionDetail?id={item.Id}");
+		}
+		catch (Exception exception)
+		{
+			logger.LogSanitizedException(nameof(TransactionsPage), nameof(OnTransactionSelected), exception);
+		}
+	}
 }

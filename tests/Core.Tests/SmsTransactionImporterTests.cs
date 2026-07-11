@@ -14,6 +14,9 @@ public sealed class SmsTransactionImporterTests
     private const string MediumDebitNoRef = "Rs. 250.00 debited via UPI.";
     private const string NonFinancial = "Your appointment is confirmed for tomorrow.";
 
+    private const string HighCreditCardRefundWithDate =
+        "SYNTHPAY IN E COMMERC refund of Rs 1,234.00 credited to your REDACTED Bank Credit Card XX0000 on 10-JUL-26.";
+
     private static readonly DateTimeOffset BaseInstant = new(2026, 7, 9, 10, 30, 0, TimeSpan.Zero);
 
     [TestMethod]
@@ -87,9 +90,23 @@ public sealed class SmsTransactionImporterTests
     }
 
     [TestMethod]
-    public async Task ImportAsync_NonFinancialBody_IsIgnored()
+    public async Task ImportAsync_BodyWithDate_UsesBodyDateWithReceivedTimeAndKeepsSourceMessage()
     {
-        var importer = NewImporter(out var repository);
+        var importer = NewImporter(out _);
+        var receivedAt = new DateTimeOffset(2026, 7, 11, 20, 8, 0, TimeSpan.FromHours(5.5));
+
+        var result = await importer.ImportAsync([new SmsInboxMessage(HighCreditCardRefundWithDate, receivedAt)]);
+
+        var ready = Assert.ContainsSingle(result.Ready);
+        Assert.AreEqual(new DateTimeOffset(2026, 7, 10, 20, 8, 0, TimeSpan.FromHours(5.5)), ready.OccurredAt);
+        Assert.AreEqual(HighCreditCardRefundWithDate, ready.SourceMessage);
+        Assert.AreEqual("REDACTED Bank Credit Card ••0000", ready.Account);
+        Assert.AreEqual("Synthpay", ready.Merchant);
+    }
+
+    [TestMethod]
+    public async Task ImportAsync_NonFinancialBody_IsIgnored()
+    {        var importer = NewImporter(out var repository);
 
         var result = await importer.ImportAsync([new SmsInboxMessage(NonFinancial, BaseInstant)]);
 

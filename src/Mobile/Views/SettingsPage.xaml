@@ -23,7 +23,7 @@
                             <Label Text="{Binding StatusText}" Style="{StaticResource ChipLabel}" />
                         </Border>
                     </Grid>
-                    <Label Text="Optional Android permission for reading existing SMS messages locally on this device. HasbeMaal does not store or transmit raw SMS. You can deny access and revoke it later from app settings." Style="{StaticResource MutedLabel}" />
+                    <Label Text="Optional Android permission for reading existing SMS messages locally on this device. When you import, HasbeMaal saves the original bank or UPI message text on this device in encrypted form so you can view it on a transaction's detail page. It is never uploaded, shared, or sent to any server, AI, or telemetry, and it is removed when you delete local data. You can deny access and revoke it later from app settings." Style="{StaticResource MutedLabel}" />
                     <Border Style="{StaticResource LoadingStateBorder}"
                             IsVisible="{Binding IsBusy}">
                         <HorizontalStackLayout Spacing="12">
@@ -48,6 +48,10 @@
                             Text="Import from SMS"
                             Style="{StaticResource SecondaryButton}"
                             Clicked="OnImportFromSmsClicked" />
+                    <Button x:Name="ChooseBanksButton"
+                            Text="Choose banks to scan"
+                            Style="{StaticResource SecondaryButton}"
+                            Clicked="OnChooseBanksClicked" />
                 </VerticalStackLayout>
             </Border>
 

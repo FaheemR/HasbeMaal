@@ -35,7 +35,7 @@ public sealed class FinancialTransactionFactoryTests
     }
 
     [TestMethod]
-    public void Create_DoesNotStoreRawReference()
+    public void Create_HashesReference_WithoutExposingRawValueInHash()
     {
         const string reference = "SYNTH-REF-002";
         var parsed = NewParsed(reference);
@@ -45,6 +45,47 @@ public sealed class FinancialTransactionFactoryTests
         Assert.IsNotNull(tx.SourceReferenceHash);
         Assert.AreNotEqual(reference, tx.SourceReferenceHash);
         StringAssert.DoesNotMatch(tx.SourceReferenceHash!, new System.Text.RegularExpressions.Regex(reference));
+    }
+
+    [TestMethod]
+    public void Create_RetainsRawReference_ForDisplay()
+    {
+        const string reference = "SYNTH-REF-002";
+        var parsed = NewParsed(reference);
+
+        var tx = FinancialTransactionFactory.Create(parsed);
+
+        Assert.AreEqual(reference, tx.SourceReference);
+    }
+
+    [TestMethod]
+    public void Create_NullReference_LeavesReferenceAndHashNull()
+    {
+        var tx = FinancialTransactionFactory.Create(NewParsed(reference: null));
+
+        Assert.IsNull(tx.SourceReference);
+        Assert.IsNull(tx.SourceReferenceHash);
+    }
+
+    [TestMethod]
+    public void Create_MapsAccountAndSourceMessage()
+    {
+        var parsed = new ParsedTransaction(
+            new MoneyAmount(1234.00m),
+            "Synthpay",
+            new DateTimeOffset(2026, 7, 10, 20, 8, 0, TimeSpan.FromHours(5.5)),
+            TransactionDirection.Credit,
+            TransactionSource.CreditCardSms,
+            Reference: null,
+            ParseConfidence.High,
+            OccurredOn: new DateOnly(2026, 7, 10),
+            Account: "REDACTED Bank Credit Card ••0000",
+            SourceMessage: "SYNTH ORIGINAL SMS BODY XX0000");
+
+        var tx = FinancialTransactionFactory.Create(parsed);
+
+        Assert.AreEqual("REDACTED Bank Credit Card ••0000", tx.Account);
+        Assert.AreEqual("SYNTH ORIGINAL SMS BODY XX0000", tx.SourceMessage);
     }
 
     [TestMethod]

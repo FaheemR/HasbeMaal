@@ -63,7 +63,6 @@ public static class MauiProgram
 		#else
 		builder.Services.AddSingleton<ISmsPermissionService, UnsupportedSmsPermissionService>();
 		#endif
-		builder.Services.AddSingleton<SmsSenderAllowlist>();
 		#if ANDROID
 		builder.Services.AddSingleton<ISmsInboxReader, AndroidSmsInboxReader>();
 		#else
@@ -81,6 +80,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<ITransactionRepository, EncryptedTransactionRepository>();
 		builder.Services.AddSingleton<IMonthlyBudgetCategoryRepository, EncryptedMonthlyBudgetCategoryRepository>();
 		builder.Services.AddSingleton<ISmsImportWatermarkStore, EncryptedSmsImportWatermarkStore>();
+		builder.Services.AddSingleton<ISelectedBanksStore, EncryptedSelectedBanksStore>();
 		builder.Services.AddSingleton<ISmsTransactionImporter, SmsTransactionImporter>();
 		builder.Services.AddSingleton<TransactionApplicationService>();
 		builder.Services.AddSingleton<ITransactionApplicationService>(services =>
@@ -97,6 +97,8 @@ public static class MauiProgram
 		builder.Services.AddTransient<BudgetsViewModel>();
 		builder.Services.AddTransient<SmsPermissionConsentViewModel>();
 		builder.Services.AddTransient<SmsImportViewModel>();
+		builder.Services.AddTransient<BankSelectionViewModel>();
+		builder.Services.AddTransient<TransactionDetailViewModel>();
 		builder.Services.AddTransient<DashboardPage>();
 		builder.Services.AddTransient<TransactionsPage>();
 		builder.Services.AddTransient<ManualEntryPage>();
@@ -104,6 +106,8 @@ public static class MauiProgram
 		builder.Services.AddTransient<GoalsPage>();
 		builder.Services.AddTransient<SettingsPage>();
 		builder.Services.AddTransient<SmsImportPage>();
+		builder.Services.AddTransient<BankSelectionPage>();
+		builder.Services.AddTransient<TransactionDetailPage>();
 
 		LogAndroidStartup("Build", "Started");
 

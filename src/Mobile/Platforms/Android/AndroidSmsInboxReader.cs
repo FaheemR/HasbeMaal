@@ -6,24 +6,23 @@ using Android.Database;
 using Android.Provider;
 using AndroidX.Core.Content;
 using HasbeMaal.Core.Import;
-using HasbeMaal.Presentation.ViewModels;
 
 namespace HasbeMaal.Mobile.Platforms.Android;
 
 /// <summary>
 /// Reads candidate transaction SMS messages from the Android inbox. The sender address is
-/// used only for the allowlist check and is dropped before a <see cref="SmsInboxMessage"/>
-/// is created, so no sender identifier crosses the Core boundary. Nothing here logs or stores
-/// message bodies, sender addresses, phone numbers, or account hints.
+/// used only for the header-exact <see cref="BankSenderMatcher"/> check and is dropped before a
+/// <see cref="SmsInboxMessage"/> is created, so no sender identifier crosses the Core boundary.
+/// Nothing here logs or stores message bodies, sender addresses, phone numbers, or account hints.
 /// </summary>
 public sealed class AndroidSmsInboxReader : ISmsInboxReader
 {
-    private readonly SmsSenderAllowlist _allowlist;
+    private readonly ISelectedBanksStore _selectedBanksStore;
 
-    public AndroidSmsInboxReader(SmsSenderAllowlist allowlist)
+    public AndroidSmsInboxReader(ISelectedBanksStore selectedBanksStore)
     {
-        ArgumentNullException.ThrowIfNull(allowlist);
-        _allowlist = allowlist;
+        ArgumentNullException.ThrowIfNull(selectedBanksStore);
+        _selectedBanksStore = selectedBanksStore;
     }
 
     public async Task<IReadOnlyList<SmsInboxMessage>> ReadAsync(
@@ -39,14 +38,19 @@ public sealed class AndroidSmsInboxReader : ISmsInboxReader
             return Array.Empty<SmsInboxMessage>();
         }
 
+        // Resolve the sender matcher from the user's selected banks (empty selection = full registry).
+        var selectedBankIds = await _selectedBanksStore.GetAsync(cancellationToken).ConfigureAwait(false);
+        var matcher = BankSenderMatcher.ForSelectedBanks(selectedBankIds);
+
         return await Task.Run(
-            () => ReadInbox(context, since, cancellationToken),
+            () => ReadInbox(context, since, matcher, cancellationToken),
             cancellationToken).ConfigureAwait(false);
     }
 
     private IReadOnlyList<SmsInboxMessage> ReadInbox(
         Context context,
         DateTimeOffset? since,
+        BankSenderMatcher matcher,
         CancellationToken cancellationToken)
     {
         var resolver = context.ContentResolver;
@@ -99,7 +103,7 @@ public sealed class AndroidSmsInboxReader : ISmsInboxReader
 
             // Sender address is read only to run the allowlist check, then discarded.
             var address = addressColumn >= 0 ? cursor.GetString(addressColumn) : null;
-            if (!_allowlist.IsAllowed(address))
+            if (!matcher.IsMatch(address))
             {
                 continue;
             }

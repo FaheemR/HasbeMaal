@@ -95,6 +95,24 @@ public partial class SettingsPage : ContentPage
 		}
 	}
 
+	private async void OnChooseBanksClicked(object? sender, EventArgs e)
+	{
+		logger.LogDebug(
+			"HasbeMaal diagnostic Component={Component} Operation={Operation} Status=Requested Route={Route}",
+			nameof(SettingsPage),
+			nameof(OnChooseBanksClicked),
+			"BankSelection");
+
+		try
+		{
+			await Shell.Current.GoToAsync("BankSelection");
+		}
+		catch (Exception exception)
+		{
+			logger.LogSanitizedException(nameof(SettingsPage), nameof(OnChooseBanksClicked), exception);
+		}
+	}
+
 	private async void OnDeleteLocalDataClicked(object? sender, EventArgs e)
 	{
 		logger.LogDebug(

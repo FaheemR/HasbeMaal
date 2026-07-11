@@ -81,6 +81,45 @@ public sealed class TransactionsViewModelTests
         Assert.AreEqual("REDACTED STORE", item.Merchant);
     }
 
+    [TestMethod]
+    public void Load_PopulatesIdAndReferenceForListItems()
+    {
+        var viewModel = NewViewModel();
+        var transaction = NewTransaction(
+            "REDACTED STORE",
+            "Groceries",
+            125.75m,
+            new DateTimeOffset(2026, 7, 8, 0, 0, 0, TimeSpan.Zero),
+            sourceReference: "SYNTH-UPI-REF-901",
+            account: "REDACTED Bank Credit Card ••0000");
+
+        viewModel.Load([transaction]);
+
+        var item = Assert.ContainsSingle(viewModel.Groups[0]);
+        Assert.AreEqual(transaction.Id, item.Id);
+        Assert.AreEqual("SYNTH-UPI-REF-901", item.ReferenceText);
+        Assert.IsTrue(item.HasReference);
+        Assert.AreEqual("REDACTED Bank Credit Card ••0000", item.AccountText);
+        Assert.IsTrue(item.HasAccount);
+    }
+
+    [TestMethod]
+    public void Load_WithoutReference_ListItemHasNoReference()
+    {
+        var viewModel = NewViewModel();
+        var transaction = NewTransaction(
+            "REDACTED CASH",
+            "Groceries",
+            50m,
+            new DateTimeOffset(2026, 7, 8, 0, 0, 0, TimeSpan.Zero));
+
+        viewModel.Load([transaction]);
+
+        var item = Assert.ContainsSingle(viewModel.Groups[0]);
+        Assert.IsNull(item.ReferenceText);
+        Assert.IsFalse(item.HasReference);
+    }
+
     private static TransactionsViewModel NewViewModel(
         ListingTransactionApplicationService? applicationService = null) =>
         new(applicationService ?? new ListingTransactionApplicationService([]));
@@ -90,7 +129,9 @@ public sealed class TransactionsViewModelTests
         string category,
         decimal amount,
         DateTimeOffset occurredAt,
-        TransactionDirection direction = TransactionDirection.Debit)
+        TransactionDirection direction = TransactionDirection.Debit,
+        string? sourceReference = null,
+        string? account = null)
     {
         return new FinancialTransaction(
             Guid.NewGuid(),
@@ -100,7 +141,9 @@ public sealed class TransactionsViewModelTests
             occurredAt,
             merchant,
             category,
-            sourceReferenceHash: null);
+            sourceReferenceHash: null,
+            sourceReference: sourceReference,
+            account: account);
     }
 
     private sealed class ListingTransactionApplicationService : ITransactionApplicationService

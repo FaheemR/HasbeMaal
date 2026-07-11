@@ -1,6 +1,6 @@
 # Android SMS Store Review Notes
 
-Last reviewed: 2026-07-10
+Last reviewed: 2026-07-11
 
 These notes document the Android `READ_SMS` permission and privacy copy for store review. They apply to the Local MVP boundary described in [Data Handling](data-handling.md) and the [Local MVP threat model](threat-model.md).
 
@@ -13,7 +13,7 @@ Current implementation status:
 - Implemented: Android declares `android.permission.READ_SMS` in `src/Mobile/Platforms/Android/AndroidManifest.xml`.
 - Implemented: Settings shows an explicit SMS permission consent section.
 - Implemented: The permission flow supports allow, denied, unsupported, and open-app-settings states.
-- Approved and in progress: user-initiated, foreground SMS inbox import that filters by a sender allowlist, parses locally, and stores only structured transactions. See [Approved SMS Import Flow](#approved-sms-import-flow).
+- Approved and in progress: user-initiated, foreground SMS inbox import that filters by a sender allowlist, parses locally, stores structured transactions, and retains the original SMS body of each matched imported transaction (encrypted, shown only to the user, never logged, purgeable). See [Approved SMS Import Flow](#approved-sms-import-flow).
 - Not implemented and not approved: background SMS monitoring, raw-source diagnostics, cloud sync, telemetry, AI insights, or any network submission of SMS data.
 
 ## Permission Purpose
@@ -23,7 +23,7 @@ Current implementation status:
 1. Read only the SMS content needed for local parsing.
 2. Convert matching content into structured transaction candidates.
 3. Store only structured transaction data through approved local encrypted persistence.
-4. Do not retain raw SMS text, sender identifiers, source transaction references, account hints, UPI identifiers, or phone numbers after parsing.
+4. Retain the original SMS body only on the matched, imported transaction, encrypted and shown only to the user; do not retain sender identifiers, account hints, or phone numbers as separate values.
 
 SMS import is approved under the narrow purpose above and the controls in [Approved SMS Import Flow](#approved-sms-import-flow). The permission remains optional, and non-SMS workflows must continue to function when it is denied. Any change that widens this purpose, adds background access, or retains raw source data requires a new privacy review and a threat model update before implementation continues.
 
@@ -36,7 +36,7 @@ SMS import runs only when the user opens the import flow in the foreground and s
 - Local parsing: only the message body and its received timestamp are passed to deterministic on-device parsing. The received timestamp becomes the transaction date. A source reference, when present, is reduced to a one-way hash for duplicate detection and is never stored raw.
 - Deduplication: candidates are deduplicated against existing transactions and within the batch using the hashed reference and a composite key of amount, direction, received timestamp, and normalized merchant, combined with the watermark. Duplicates are skipped.
 - Review model: high-confidence, non-duplicate candidates are committed as structured transactions in a single user action. Lower-confidence candidates are shown for grouped, bulk review before they are committed or discarded; un-actioned candidates stay pending for a later import, subject to a cap. Imported transactions can be removed through the app's delete controls.
-- No raw retention: after import, only structured transaction fields and the watermark persist. No raw SMS text, sender identifier, phone number, account hint, UPI identifier, or raw reference is retained.
+- Original-message retention: after import, the original body of each committed transaction is retained (encrypted, user-only, never logged, purgeable), together with the raw UPI reference and a masked account tail. The sender identifier, phone number, and account address are not retained.
 
 Final user-facing copy for the import screens will be documented here when the import UI lands.
 
@@ -45,7 +45,7 @@ Final user-facing copy for the import screens will be documented here when the i
 The current Settings page uses this user-facing copy:
 
 - Section title: `Historical SMS access`
-- Body: `Optional Android permission for reading existing SMS messages locally on this device. HasbeMaal does not store or transmit raw SMS. You can deny access and revoke it later from app settings.`
+- Body: `Optional Android permission for reading existing SMS messages locally on this device. When you import, HasbeMaal saves the original bank or UPI message text on this device in encrypted form so you can view it on a transaction's detail page. It is never uploaded, shared, or sent to any server, AI, or telemetry, and it is removed when you delete local data. You can deny access and revoke it later from app settings.`
 - Primary action: `Allow SMS access`
 - Secondary action: `Open app settings`
 - Granted status: `SMS access is allowed.`
@@ -54,7 +54,7 @@ The current Settings page uses this user-facing copy:
 
 Store-review copy should stay consistent with this statement:
 
-> HasbeMaal uses Android SMS access only when you choose to enable it, to read messages on your device for local transaction detection. Raw SMS is processed locally, is not stored, and is not sent to HasbeMaal, cloud services, AI services, or telemetry. You can deny or revoke SMS access from Android app settings.
+> HasbeMaal uses Android SMS access only when you choose to enable it, to read messages on your device for local transaction detection. Matching messages are processed on device, and the original message text is stored locally in encrypted form so you can review it on the transaction's detail screen. SMS content is never sent to HasbeMaal, cloud services, AI services, or telemetry, and it is deleted when you delete local data or uninstall the app. You can deny or revoke SMS access from Android app settings.
 
 Do not add examples that contain real SMS text, UPI IDs, account numbers, phone numbers, transaction references, merchant trails, screenshots with financial data, secrets, or real transaction history.
 
@@ -68,15 +68,17 @@ SMS permission denial or revocation must not trigger data upload, telemetry subm
 
 ## Retention And Raw SMS Storage
 
-Raw SMS storage is not enabled and must remain disabled by default.
+Raw SMS storage is limited to the original body of matched imported transactions, encrypted and user-only.
 
 Required handling rules:
 
-- Do not persist raw SMS text.
-- Do not persist sender IDs, account identifiers, UPI IDs, phone numbers, or source transaction references as raw values.
+- Persist the original SMS body only on matched imported transactions, encrypted and user-only; never log, export, or transmit it.
+- Do not persist sender IDs, account identifiers, UPI IDs, phone numbers, or source transaction references as raw values, beyond the reviewed retained fields (original body, hashed reference, masked account tail).
 - Do not log raw SMS content or exact transaction trails.
 - Do not include raw SMS or personal financial data in screenshots, issues, review attachments, parser fixtures, or generated artifacts.
-- Any future raw-source diagnostic mode must receive a separate privacy review and must be explicit, encrypted, time-limited, and purgeable.
+- The Play Data Safety declaration must list SMS/message content (and financial info) as collected and stored on device, used for app functionality, not shared, and user-deletable.
+- Any future export, backup, or restore flow must exclude the stored original SMS body or gate it behind explicit consent; treat it as Sensitive in any serialized artifact.
+- Any raw SMS or transaction trail leaving the device (cloud, backup, AI, telemetry) remains disabled by default and requires a separate privacy review.
 
 ## Local-Only Processing
 

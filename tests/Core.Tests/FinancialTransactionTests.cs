@@ -33,6 +33,83 @@ public sealed class FinancialTransactionTests
     }
 
     [TestMethod]
+    public void Constructor_RawSourceReference_IsTrimmedAndRetained()
+    {
+        var transaction = NewTransaction(sourceReference: "  SYNTH-UPI-REF-001  ");
+
+        Assert.AreEqual("SYNTH-UPI-REF-001", transaction.SourceReference);
+    }
+
+    [TestMethod]
+    [DataRow(null)]
+    [DataRow("")]
+    [DataRow("   ")]
+    public void Constructor_BlankSourceReference_BecomesNull(string? sourceReference)
+    {
+        var transaction = NewTransaction(sourceReference: sourceReference);
+
+        Assert.IsNull(transaction.SourceReference);
+    }
+
+    [TestMethod]
+    public void ToString_ExcludesRawReferenceAndHash()
+    {
+        var transaction = new FinancialTransaction(
+            Guid.NewGuid(),
+            new MoneyAmount(125.75m),
+            TransactionDirection.Debit,
+            TransactionSource.UpiSms,
+            new DateTimeOffset(2026, 7, 8, 10, 15, 0, TimeSpan.Zero),
+            "REDACTED STORE",
+            "Groceries",
+            sourceReferenceHash: "ABC123HASH",
+            sourceReference: "SYNTH-UPI-REF-002",
+            account: "REDACTED Bank Credit Card ••0000",
+            sourceMessage: "SYNTH ORIGINAL SMS BODY XX0000");
+
+        var text = transaction.ToString();
+
+        Assert.DoesNotContain("SYNTH-UPI-REF-002", text);
+        Assert.DoesNotContain("ABC123HASH", text);
+        Assert.DoesNotContain("SourceReference", text);
+        Assert.DoesNotContain("••0000", text);
+        Assert.DoesNotContain("SYNTH ORIGINAL SMS BODY", text);
+        Assert.DoesNotContain("Account", text);
+        Assert.DoesNotContain("SourceMessage", text);
+    }
+
+    [TestMethod]
+    public void Constructor_AccountAndSourceMessage_AreTrimmedAndRetained()
+    {
+        var transaction = new FinancialTransaction(
+            Guid.NewGuid(),
+            new MoneyAmount(125.75m),
+            TransactionDirection.Debit,
+            TransactionSource.UpiSms,
+            new DateTimeOffset(2026, 7, 8, 10, 15, 0, TimeSpan.Zero),
+            "REDACTED STORE",
+            "Groceries",
+            sourceReferenceHash: null,
+            sourceReference: null,
+            account: "  REDACTED Bank Credit Card ••0000  ",
+            sourceMessage: "  SYNTH ORIGINAL SMS  ");
+
+        Assert.AreEqual("REDACTED Bank Credit Card ••0000", transaction.Account);
+        Assert.AreEqual("SYNTH ORIGINAL SMS", transaction.SourceMessage);
+    }
+
+    private static FinancialTransaction NewTransaction(string? sourceReference) => new(
+        Guid.NewGuid(),
+        new MoneyAmount(125.75m),
+        TransactionDirection.Debit,
+        TransactionSource.UpiSms,
+        new DateTimeOffset(2026, 7, 8, 10, 15, 0, TimeSpan.Zero),
+        "REDACTED STORE",
+        "Groceries",
+        sourceReferenceHash: null,
+        sourceReference: sourceReference);
+
+    [TestMethod]
     public void Constructor_EmptyId_Throws()
     {
         Assert.ThrowsExactly<ArgumentException>(() => new FinancialTransaction(

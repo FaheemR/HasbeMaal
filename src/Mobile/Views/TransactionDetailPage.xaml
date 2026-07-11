@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HasbeMaal.Presentation.ViewModels;assembly=HasbeMaal.Presentation"
+             x:Class="HasbeMaal.Mobile.Views.TransactionDetailPage"
+             x:DataType="vm:TransactionDetailViewModel"
+             SafeAreaEdges="Container, Container, Container, SoftInput"
+             Title="Transaction">
+    <ScrollView>
+        <VerticalStackLayout Style="{StaticResource PageContentLayout}">
+            <Button Text="‹ Back to transactions"
+                    Style="{StaticResource SecondaryButton}"
+                    HorizontalOptions="Start"
+                    Clicked="OnBackClicked" />
+            <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
+                <Label Text="LEDGER" Style="{StaticResource EyebrowLabel}" />
+                <Label Text="Transaction" Style="{StaticResource PageTitle}" />
+                <Label Text="Full details for this local transaction." Style="{StaticResource PageSubtitle}" />
+            </VerticalStackLayout>
+
+            <Border Style="{StaticResource LoadingStateBorder}"
+                    IsVisible="{Binding IsLoading}">
+                <HorizontalStackLayout Spacing="12">
+                    <ActivityIndicator IsRunning="{Binding IsLoading}" VerticalOptions="Center" />
+                    <Label Text="Opening transaction" Style="{StaticResource ChipLabel}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource EmptyAffordanceBorder}"
+                    IsVisible="{Binding NotFound}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Transaction not found" Style="{StaticResource SectionTitle}" />
+                    <Label Text="This transaction may have been deleted from this device." Style="{StaticResource MutedLabel}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource HeroCardBorder}"
+                    IsVisible="{Binding IsFound}">
+                <VerticalStackLayout Style="{StaticResource CardContentLayout}" Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <Label Text="{Binding MerchantText}"
+                               Style="{StaticResource SectionTitle}"
+                               FontSize="18"
+                               LineBreakMode="TailTruncation" />
+                        <Border Grid.Column="1" Style="{StaticResource PillBorder}">
+                            <Label Text="{Binding DirectionText}" Style="{StaticResource ChipLabel}" />
+                        </Border>
+                    </Grid>
+                    <Label Text="{Binding AmountText}" Style="{StaticResource PageTitle}" FontSize="28" />
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="DATE &amp; TIME" Style="{StaticResource EyebrowLabel}" />
+                        <Label Text="{Binding OccurredOnText}" Style="{StaticResource SectionTitle}" FontSize="15" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="4" IsVisible="{Binding HasAccount}">
+                        <Label Text="ACCOUNT / CARD" Style="{StaticResource EyebrowLabel}" />
+                        <Label Text="{Binding AccountText}" Style="{StaticResource SectionTitle}" FontSize="15" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="CATEGORY" Style="{StaticResource EyebrowLabel}" />
+                        <Label Text="{Binding CategoryText}" Style="{StaticResource SectionTitle}" FontSize="15" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="4" IsVisible="{Binding HasReference}">
+                        <Label Text="UPI REFERENCE" Style="{StaticResource EyebrowLabel}" />
+                        <Label Text="{Binding ReferenceText}"
+                               Style="{StaticResource SectionTitle}"
+                               FontSize="15"
+                               LineBreakMode="CharacterWrap" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="4" IsVisible="{Binding HasOriginalSms}">
+                        <Label Text="ORIGINAL SMS" Style="{StaticResource EyebrowLabel}" />
+                        <Border Style="{StaticResource CardBorder}">
+                            <Label Text="{Binding OriginalSmsText}"
+                                   Style="{StaticResource MutedLabel}"
+                                   FontSize="14"
+                                   LineBreakMode="WordWrap" />
+                        </Border>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -48,6 +48,8 @@ public partial class AppShell : Shell
 				serviceProvider.GetRequiredService<SettingsPage>());
 
 			Routing.RegisterRoute("SmsImport", typeof(SmsImportPage));
+			Routing.RegisterRoute("BankSelection", typeof(BankSelectionPage));
+			Routing.RegisterRoute("TransactionDetail", typeof(TransactionDetailPage));
 
 			Navigating += OnNavigating;
 			Navigated += OnNavigated;

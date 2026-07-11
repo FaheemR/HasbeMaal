@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HasbeMaal.Presentation.ViewModels;assembly=HasbeMaal.Presentation"
+             x:Class="HasbeMaal.Mobile.Views.BankSelectionPage"
+             x:DataType="vm:BankSelectionViewModel"
+             SafeAreaEdges="Container, Container, Container, SoftInput"
+             Title="SMS banks">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Style="{StaticResource PageListLayout}">
+        <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
+            <Label Text="SOURCES" Style="{StaticResource EyebrowLabel}" />
+            <Label Text="SMS banks" Style="{StaticResource PageTitle}" />
+            <Label Text="Choose which banks and UPI apps HasbeMaal scans for transactions. Sender headers are public identifiers; no raw SMS is stored." Style="{StaticResource PageSubtitle}" />
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Grid.Row="1" Spacing="12">
+            <Label Text="{Binding StatusText}" Style="{StaticResource MutedLabel}" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Button Text="Select all"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding SelectAllCommand}" />
+                <Button Grid.Column="1"
+                        Text="Clear"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding ClearAllCommand}" />
+            </Grid>
+        </VerticalStackLayout>
+
+        <CollectionView Grid.Row="2"
+                        ItemsSource="{Binding Banks}"
+                        SelectionMode="None">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:BankSelectionItemViewModel">
+                    <Border Style="{StaticResource CardBorder}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <Label Text="{Binding Name}"
+                                   Style="{StaticResource SectionTitle}"
+                                   FontSize="16"
+                                   VerticalOptions="Center"
+                                   LineBreakMode="TailTruncation" />
+                            <Switch Grid.Column="1"
+                                    IsToggled="{Binding IsSelected}"
+                                    VerticalOptions="Center" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Button Grid.Row="3"
+                Text="Save selection"
+                Command="{Binding SaveCommand}"
+                IsEnabled="{Binding CanSave}" />
+    </Grid>
+</ContentPage>
