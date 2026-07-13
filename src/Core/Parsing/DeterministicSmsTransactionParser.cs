@@ -70,6 +70,13 @@ public sealed class DeterministicSmsTransactionParser : ISmsTransactionParser
         "purchase", "received", "paid", "sent", "withdrawn", "transaction", "txn"
     ];
 
+    // Bank-notification boilerplate that leads credit-card statement and bill-payment SMS. It never names
+    // a real counterparty, so a candidate containing it resolves to "Unknown" rather than a fake merchant.
+    private static readonly string[] MerchantBoilerplateFragments =
+    [
+        "cardmember", "card member", "credit card", "debit card", "dear customer"
+    ];
+
     private static readonly string[] AccountLeadingStops = ["to", "your", "the", "a", "in", "on", "of", "for", "my"];
 
     public ParsedTransaction? TryParse(string message)
@@ -256,6 +263,11 @@ public sealed class DeterministicSmsTransactionParser : ISmsTransactionParser
         if (lower.Contains("a/c", StringComparison.Ordinal) ||
             lower.Contains("account", StringComparison.Ordinal) ||
             lower.Contains("has been", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (lower.StartsWith("dear ", StringComparison.Ordinal) || ContainsAny(lower, MerchantBoilerplateFragments))
         {
             return false;
         }

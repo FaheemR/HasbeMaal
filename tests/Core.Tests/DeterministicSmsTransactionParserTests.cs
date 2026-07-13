@@ -260,4 +260,32 @@ public sealed class DeterministicSmsTransactionParserTests
 
         Assert.IsNull(result);
     }
+
+    [TestMethod]
+    public void TryParse_CardmemberPaymentBoilerplate_ResolvesToUnknownMerchant()
+    {
+        var parser = new DeterministicSmsTransactionParser();
+        const string message =
+            "HDFC Bank Cardmember, Payment of Rs 16365.00 was credited to your card ending 8728 on 03-JUL-26.";
+
+        var result = parser.TryParse(message);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(TransactionDirection.Credit, result!.Direction);
+        Assert.AreEqual("Unknown", result.Merchant);
+    }
+
+    [TestMethod]
+    public void TryParse_DearCardmemberBoilerplate_ResolvesToUnknownMerchant()
+    {
+        var parser = new DeterministicSmsTransactionParser();
+        const string message =
+            "DEAR HDFCBANK CARDMEMBER, PAYMENT OF Rs 16365.00 RECEIVED TOWARDS YOUR CREDIT CARD ENDING WITH 8728 ON 03-JUL-26. YOUR AVAILABLE LIMIT IS Rs 50000.00";
+
+        var result = parser.TryParse(message);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(TransactionDirection.Credit, result!.Direction);
+        Assert.AreEqual("Unknown", result.Merchant);
+    }
 }
