@@ -132,4 +132,132 @@ public sealed class DeterministicSmsTransactionParserTests
         Assert.IsNull(result!.OccurredOn);
         Assert.IsNull(result.Account);
     }
+
+    [TestMethod]
+    public void TryParse_AccountStatementDebitWithNoPayee_MerchantIsUnknown()
+    {
+        var parser = new DeterministicSmsTransactionParser();
+        const string message = "Your A/c XXXXXXXX0000 has been debited by Rs 1,500.00 on 09-JUL-26.";
+
+        var result = parser.TryParse(message);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual("Unknown", result!.Merchant);
+        Assert.AreEqual(ParseConfidence.Medium, result.Confidence);
+        Assert.AreEqual(TransactionDirection.Debit, result.Direction);
+        Assert.AreEqual("A/c ••0000", result.Account);
+    }
+
+    [TestMethod]
+    public void TryParse_LeadingBareNumberFragment_IsNotUsedAsMerchant()
+    {
+        var parser = new DeterministicSmsTransactionParser();
+
+        var result = parser.TryParse("11 Rs 3,000.00 credited.");
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual("Unknown", result!.Merchant);
+        Assert.AreEqual(TransactionDirection.Credit, result.Direction);
+    }
+
+    // Synthetic fixtures modeled on real HDFC/JK Bank formats (redacted, no real data).
+
+    [TestMethod]
+    public void TryParse_HdfcUpiSend_ExtractsPayeeAfterTo()
+    {
+        var parser = new DeterministicSmsTransactionParser();
+        const string message =
+            "Sent Rs 500.00 From REDACTED SELF A/C x0000 To REDACTED PAYEE On 09-JUL-26 Ref 123456789012 Not You? Call 18000.";
+
+        var result = parser.TryParse(message);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(500.00m, result!.Amount.Amount);
+        Assert.AreEqual(TransactionDirection.Debit, result.Direction);
+        Assert.AreEqual("Redacted Payee", result.Merchant);
+        Assert.AreEqual(new DateOnly(2026, 7, 9), result.OccurredOn);
+    }
+
+    [TestMethod]
+    public void TryParse_HdfcCardSpend_ExtractsMerchantAfterAt()
+    {
+        var parser = new DeterministicSmsTransactionParser();
+        const string message =
+            "Spent Rs 250.00 On HDFC Bank Card x0000 At REDACTED STORE On 09-JUL-26. Not You? Call 18000.";
+
+        var result = parser.TryParse(message);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(TransactionDirection.Debit, result!.Direction);
+        Assert.AreEqual("Redacted Store", result.Merchant);
+    }
+
+    [TestMethod]
+    public void TryParse_JkCredit_ExtractsPayerAfterFrom()
+    {
+        var parser = new DeterministicSmsTransactionParser();
+        const string message =
+            "Rs 300.00 credited to REDACTED SELF A/c no. XX0000 via UPI from REDACTED PAYER on 09-JUL-26. (UPI Ref No:123456789012).";
+
+        var result = parser.TryParse(message);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(TransactionDirection.Credit, result!.Direction);
+        Assert.AreEqual("Redacted Payer", result.Merchant);
+        Assert.AreEqual("123456789012", result.Reference);
+    }
+
+    [TestMethod]
+    public void TryParse_UpiAutoPayTowardsVpa_ExtractsVpaAsMerchant()
+    {
+        var parser = new DeterministicSmsTransactionParser();
+        const string message =
+            "Your account has been successfully debited with Rs 200.00 on 09-JUL-26 towards synthmerchant@okhdfcbank UPI AutoPay.";
+
+        var result = parser.TryParse(message);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(TransactionDirection.Debit, result!.Direction);
+        Assert.AreEqual("synthmerchant@okhdfcbank", result.Merchant);
+    }
+
+    [TestMethod]
+    public void TryParse_HdfcCardTxnAtVpa_TreatedAsDebitWithVpaMerchant()
+    {
+        var parser = new DeterministicSmsTransactionParser();
+        const string message =
+            "Txn Rs 100.00 On HDFC Bank Card 0000 At synthmerchant@okaxis by UPI 123456789012 On 09-07. Not You? Call 18000.";
+
+        var result = parser.TryParse(message);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(TransactionDirection.Debit, result!.Direction);
+        Assert.AreEqual("synthmerchant@okaxis", result.Merchant);
+    }
+
+    [TestMethod]
+    public void TryParse_JkOnAccountOfUpiBankCode_HasNoPayeeSoUnknown()
+    {
+        var parser = new DeterministicSmsTransactionParser();
+        const string message =
+            "Your A/C XX0000 is Debited by Rs 500.00 at 14:30 on account of UPI/HDFC/1234567. A/C Bal is Rs 1000.00 Cr, Available Bal is Rs 900.00 Cr JK BANK";
+
+        var result = parser.TryParse(message);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(TransactionDirection.Debit, result!.Direction);
+        Assert.AreEqual("Unknown", result.Merchant);
+    }
+
+    [TestMethod]
+    public void TryParse_BalanceAlert_IsIgnored()
+    {
+        var parser = new DeterministicSmsTransactionParser();
+        const string message =
+            "Available Bal in HDFC Bank A/c XX0000 as on 09-JUL-26 is Rs 5000.00. For updated A/C Bal dial 18000.";
+
+        var result = parser.TryParse(message);
+
+        Assert.IsNull(result);
+    }
 }

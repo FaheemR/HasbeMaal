@@ -11,13 +11,32 @@ public sealed class DeterministicSmsTransactionParser : ISmsTransactionParser
         @"\b(?:Rs\.?|INR)\s*(?<amount>[0-9,]+(?:\.[0-9]{1,2})?)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
-    // "to/at/from <merchant>" but never an account phrase (to your card / to a/c ...).
-    private static readonly Regex MerchantRegex = new(
-        @"\b(?:to|at|from)\s+(?!your\b|you\b|the\b|a/?c\b|account\b|card\b)(?<merchant>[A-Za-z0-9&.\-' ]+?)(?:\s+(?:via|on|using|ref|upi|a/?c|account|card|dated|worth|of|for|is)\b|[.,;:]|$)",
+    // Counterparty extraction, modeled on real bank SMS formats. Debit uses the destination
+    // ("to <payee>" / card "at <merchant>"); credit uses the source ("from <payer>"). A VPA target
+    // (merchant@bank) is the highest-signal payee handle when present.
+    private static readonly Regex MerchantAtRegex = new(
+        @"\bat\s+(?!your\b|the\b)(?<m>[A-Za-z0-9@._\-&' ]+?)(?=\s+(?:on|by|avl|not|ref|via|dated|to)\b|[.,;]|$)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
+    private static readonly Regex MerchantToRegex = new(
+        @"\bto\s+(?!your\b|you\b|the\b|a/?c\b|account\b|card\b|block\b|vpa\b)(?<m>[A-Za-z0-9@._\-&' ]+?)(?=\s+(?:on|ref|upi|via|not|dated|a/?c|account|with|is)\b|[.,;]|$)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    private static readonly Regex MerchantFromRegex = new(
+        @"\bfrom\s+(?:vpa\s+)?(?!your\b|you\b|the\b|a/?c\b|account\b|card\b|vpa\b)(?<m>[A-Za-z0-9@._\-&' ]+?)(?=\s+(?:on|via|upi|by|not|a/?c|account|with|ref|rrn|dated)\b|[.,;(]|$)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    // "towards <vpa>", "to <vpa>", "from VPA <vpa>", "at <vpa> by UPI".
+    private static readonly Regex VpaTargetRegex = new(
+        @"\b(?:towards|to|from|at)\s+(?:vpa\s+)?(?<m>[A-Za-z0-9][\w.\-]*@[A-Za-z][\w.]+)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    private static readonly Regex VpaRegex = new(
+        @"^[A-Za-z0-9][\w.\-]*@[A-Za-z][\w.]+$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     private static readonly Regex ReferenceRegex = new(
-        @"\b(?:ref(?:erence)?(?:\s+no)?|upi\s+ref(?:\s+no)?|txn)\s*[:#]?\s*(?<reference>[A-Z0-9-]{6,})",
+        @"\b(?:ref(?:erence)?(?:\s+no)?|upi\s+ref(?:\s+no)?|rrn(?:\s+no)?|txn)\s*[:#.]?\s*(?<reference>[A-Z0-9-]{6,})",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     // "on 10-JUL-26", "on 10/07/2026", "dated 10-07-26".
@@ -29,6 +48,15 @@ public sealed class DeterministicSmsTransactionParser : ISmsTransactionParser
     private static readonly Regex AccountRegex = new(
         @"(?<label>(?:[A-Za-z&.]+\s+){0,3}?(?:credit|debit)\s+card|card|a/?c|account)\s+(?:(?:no\.?|number|ending)\s*[:#]?\s*|[xX*·]{1,}\s*)(?<tail>\d{4})(?!\d)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    // Masked account token (e.g. "XXXX", "XXXXXXXX2459") and long digit runs are never merchant names.
+    private static readonly Regex MaskedAccountTokenRegex = new(
+        @"[xX*]{4,}",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static readonly Regex LongDigitRunRegex = new(
+        @"\d{5,}",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private static readonly string[] MerchantNoiseSuffixes =
     [
@@ -68,7 +96,7 @@ public sealed class DeterministicSmsTransactionParser : ISmsTransactionParser
             return null;
         }
 
-        var merchant = ExtractMerchant(message);
+        var merchant = ExtractMerchant(message, direction.Value);
         var reference = ExtractReference(message);
         var account = ExtractAccount(message);
         var occurredOn = ExtractDate(message);
@@ -100,6 +128,13 @@ public sealed class DeterministicSmsTransactionParser : ISmsTransactionParser
             return TransactionDirection.Debit;
         }
 
+        // A card transaction with no explicit verb (e.g. "Txn Rs X On Card ... by UPI") is a debit.
+        if (normalized.Contains("card", StringComparison.Ordinal) &&
+            ContainsAny(normalized, "txn", "transaction"))
+        {
+            return TransactionDirection.Debit;
+        }
+
         return null;
     }
 
@@ -125,19 +160,53 @@ public sealed class DeterministicSmsTransactionParser : ISmsTransactionParser
         return TransactionSource.BankSms;
     }
 
-    private static string ExtractMerchant(string message)
+    private static string ExtractMerchant(string message, TransactionDirection direction)
     {
-        var merchantMatch = MerchantRegex.Match(message);
-        if (merchantMatch.Success)
+        // A VPA target (merchant@bank) is the clearest payee handle; prefer it when present.
+        var vpa = VpaTargetRegex.Match(message);
+        if (vpa.Success)
         {
-            var candidate = NormalizeMerchant(merchantMatch.Groups["merchant"].Value);
-            if (candidate.Length >= 2)
+            var handle = vpa.Groups["m"].Value.Trim();
+            if (VpaRegex.IsMatch(handle))
             {
-                return candidate;
+                return handle.ToLowerInvariant();
             }
         }
 
+        // Card purchases name the merchant after "at".
+        if (TryExtractMerchant(MerchantAtRegex, message, out var atMerchant))
+        {
+            return atMerchant;
+        }
+
+        // Debit destinations ("to <payee>") vs credit sources ("from <payer>").
+        var directional = direction == TransactionDirection.Debit ? MerchantToRegex : MerchantFromRegex;
+        if (TryExtractMerchant(directional, message, out var directionalMerchant))
+        {
+            return directionalMerchant;
+        }
+
+        // Fall back to a leading merchant, guarded against account-statement preambles.
         return ExtractLeadingMerchant(message) ?? "Unknown";
+    }
+
+    private static bool TryExtractMerchant(Regex pattern, string message, out string merchant)
+    {
+        merchant = "Unknown";
+        var match = pattern.Match(message);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        var candidate = NormalizeMerchant(match.Groups["m"].Value);
+        if (!IsLikelyMerchantName(candidate))
+        {
+            return false;
+        }
+
+        merchant = candidate;
+        return true;
     }
 
     private static string? ExtractLeadingMerchant(string message)
@@ -167,7 +236,36 @@ public sealed class DeterministicSmsTransactionParser : ISmsTransactionParser
         }
 
         var head = NormalizeMerchant(message[..boundary]);
-        return head.Length >= 2 ? head : null;
+        return IsLikelyMerchantName(head) ? head : null;
+    }
+
+    /// <summary>
+    /// Rejects leading-text candidates that are not real merchant names: account-statement preambles
+    /// ("Your A/c ... has been"), masked account tokens, long digit runs, or fragments without enough
+    /// letters. Bank debit SMS often name no payee, so a rejected candidate becomes "Unknown" rather
+    /// than surfacing misleading text as the merchant.
+    /// </summary>
+    private static bool IsLikelyMerchantName(string candidate)
+    {
+        if (candidate.Length < 2)
+        {
+            return false;
+        }
+
+        var lower = candidate.ToLowerInvariant();
+        if (lower.Contains("a/c", StringComparison.Ordinal) ||
+            lower.Contains("account", StringComparison.Ordinal) ||
+            lower.Contains("has been", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (MaskedAccountTokenRegex.IsMatch(candidate) || LongDigitRunRegex.IsMatch(candidate))
+        {
+            return false;
+        }
+
+        return candidate.Count(char.IsAsciiLetter) >= 2;
     }
 
     private static string NormalizeMerchant(string raw)
