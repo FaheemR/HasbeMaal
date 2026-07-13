@@ -32,6 +32,25 @@
             <CollectionView.ItemsLayout>
                 <LinearItemsLayout Orientation="Vertical" ItemSpacing="12" />
             </CollectionView.ItemsLayout>
+            <CollectionView.Header>
+                <Border Style="{StaticResource HeroCardBorder}" Margin="0,0,0,12">
+                    <VerticalStackLayout Style="{StaticResource CardContentLayout}" Spacing="12">
+                        <Label Text="ADD CATEGORY" Style="{StaticResource EyebrowLabel}" />
+                        <Label Text="Set a monthly limit" Style="{StaticResource SectionTitle}" />
+                        <Label Text="Create a category with a monthly limit; spending is tracked against it automatically." Style="{StaticResource MutedLabel}" />
+                        <Entry Placeholder="Category name (e.g. Groceries)" Text="{Binding NewCategoryName}" />
+                        <Entry Placeholder="Monthly limit" Keyboard="Numeric" Text="{Binding NewCategoryLimit}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <Label Text="Essential expense" Style="{StaticResource ChipLabel}" VerticalOptions="Center" />
+                            <Switch Grid.Column="1" IsToggled="{Binding NewCategoryIsEssential}" HorizontalOptions="End" />
+                        </Grid>
+                        <Button Text="Add category" Command="{Binding AddCategoryCommand}" />
+                        <Border Style="{StaticResource GlassPanelBorder}" IsVisible="{Binding HasStatus}">
+                            <Label Text="{Binding StatusText}" Style="{StaticResource ChipLabel}" />
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+            </CollectionView.Header>
             <CollectionView.EmptyView>
                 <Border Style="{StaticResource EmptyAffordanceBorder}"
                         VerticalOptions="Start">
@@ -59,7 +78,7 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="vm:BudgetProgressItemViewModel">
                     <Border Style="{StaticResource CardBorder}">
-                        <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                                 <Label Text="{Binding CategoryName}" Style="{StaticResource SectionTitle}" FontSize="16" LineBreakMode="TailTruncation" />
                                 <Border Grid.Column="1"
@@ -76,6 +95,11 @@
                                 <Label Text="{Binding RemainingText}" Style="{StaticResource MutedLabel}" />
                                 <Label Grid.Column="1" Text="{Binding StatusText}" Style="{StaticResource ChipLabel}" HorizontalTextAlignment="End" />
                             </Grid>
+                            <Button Grid.Row="4"
+                                    Text="Remove"
+                                    HorizontalOptions="End"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Clicked="OnDeleteCategoryClicked" />
                         </Grid>
                     </Border>
                 </DataTemplate>

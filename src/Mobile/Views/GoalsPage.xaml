@@ -114,9 +114,13 @@
                                         <Label Grid.Column="1" Text="{Binding MonthlyContributionText}" Style="{StaticResource ChipLabel}" HorizontalTextAlignment="End" />
                                     </Grid>
 
-                                    <Grid Grid.Row="4" ColumnDefinitions="*,Auto">
+                                    <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                                         <Label Text="{Binding TargetDateText}" Style="{StaticResource MutedLabel}" VerticalOptions="Center" />
                                         <Button Grid.Column="1"
+                                                Text="Update"
+                                                Style="{StaticResource SecondaryButton}"
+                                                Clicked="OnUpdateGoalClicked" />
+                                        <Button Grid.Column="2"
                                                 Text="Remove"
                                                 Style="{StaticResource SecondaryButton}"
                                                 Clicked="OnDeleteGoalClicked" />

@@ -158,6 +158,49 @@ public sealed class GoalsViewModelTests
         Assert.IsTrue(viewModel.IsEmpty);
     }
 
+    [TestMethod]
+    public async Task UpdateGoalSavedAmountAsync_ChangesSavedAmountAndKeepsOtherFields()
+    {
+        var goal = new FinancialGoal(
+            "Emergency fund",
+            new MoneyAmount(150000m),
+            new MoneyAmount(25000m),
+            FutureDate(9),
+            "Household reserve");
+        var repository = new FakeFinancialGoalRepository(goal);
+        var viewModel = new GoalsViewModel(repository);
+        await viewModel.LoadAsync();
+
+        await viewModel.UpdateGoalSavedAmountAsync(goal.Id, 60000m);
+
+        var saved = Assert.ContainsSingle(repository.Goals);
+        Assert.AreEqual(goal.Id, saved.Id);
+        Assert.AreEqual("Emergency fund", saved.Name);
+        Assert.AreEqual(new MoneyAmount(60000m), saved.CurrentAmount);
+        Assert.AreEqual(new MoneyAmount(150000m), saved.TargetAmount);
+        Assert.AreEqual("Household reserve", saved.Purpose);
+        var item = Assert.ContainsSingle(viewModel.Items);
+        Assert.AreEqual("Saved 60000.00 INR", item.CurrentText);
+    }
+
+    [TestMethod]
+    public async Task UpdateGoalSavedAmountAsync_UnknownId_DoesNothing()
+    {
+        var goal = new FinancialGoal(
+            "Emergency fund",
+            new MoneyAmount(150000m),
+            new MoneyAmount(25000m),
+            FutureDate(9),
+            "Household reserve");
+        var repository = new FakeFinancialGoalRepository(goal);
+        var viewModel = new GoalsViewModel(repository);
+
+        await viewModel.UpdateGoalSavedAmountAsync(Guid.NewGuid(), 99000m);
+
+        var unchanged = Assert.ContainsSingle(repository.Goals);
+        Assert.AreEqual(new MoneyAmount(25000m), unchanged.CurrentAmount);
+    }
+
     private static DateOnly FutureDate(int monthsFromToday)
     {
         return DateOnly.FromDateTime(DateTime.Today.AddMonths(monthsFromToday));

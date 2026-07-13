@@ -132,6 +132,88 @@ public sealed class BudgetsViewModelTests
         }
     }
 
+    [TestMethod]
+    public async Task AddCategoryCommand_WithValidInputs_PersistsCategoryAndResetsForm()
+    {
+        var today = DateTime.Today;
+        var repository = new StatefulMonthlyBudgetCategoryRepository();
+        var viewModel = new BudgetsViewModel(repository, new ListingTransactionApplicationService([]));
+        await viewModel.LoadAsync();
+        viewModel.NewCategoryName = "Groceries";
+        viewModel.NewCategoryLimit = "5000";
+        viewModel.NewCategoryIsEssential = true;
+
+        await ((AsyncRelayCommand)viewModel.AddCategoryCommand).ExecuteAsync();
+
+        var stored = await repository.GetAsync(today.Year, today.Month);
+        var category = Assert.ContainsSingle(stored.Categories);
+        Assert.AreEqual("Groceries", category.Name);
+        Assert.AreEqual(new MoneyAmount(5000m), category.MonthlyLimit);
+        Assert.IsTrue(category.IsEssential);
+        Assert.AreEqual("Category added.", viewModel.StatusText);
+        Assert.AreEqual(string.Empty, viewModel.NewCategoryName);
+        var item = Assert.ContainsSingle(viewModel.Items);
+        Assert.AreEqual("Groceries", item.CategoryName);
+    }
+
+    [TestMethod]
+    public void AddCategoryCommand_CannotExecuteWithoutNameAndLimit()
+    {
+        var viewModel = NewViewModel();
+
+        Assert.IsFalse(viewModel.AddCategoryCommand.CanExecute(null));
+
+        viewModel.NewCategoryName = "Transport";
+        viewModel.NewCategoryLimit = "2000";
+
+        Assert.IsTrue(viewModel.AddCategoryCommand.CanExecute(null));
+    }
+
+    [TestMethod]
+    public async Task AddCategoryCommand_DuplicateName_ReportsErrorAndDoesNotAdd()
+    {
+        var today = DateTime.Today;
+        var seed = new MonthlyBudgetCategories(
+            today.Year,
+            today.Month,
+            [new BudgetCategory("Groceries", new MoneyAmount(5000m), isEssential: true)]);
+        var repository = new StatefulMonthlyBudgetCategoryRepository(seed);
+        var viewModel = new BudgetsViewModel(repository, new ListingTransactionApplicationService([]));
+        await viewModel.LoadAsync();
+        viewModel.NewCategoryName = "groceries";
+        viewModel.NewCategoryLimit = "1000";
+
+        await ((AsyncRelayCommand)viewModel.AddCategoryCommand).ExecuteAsync();
+
+        var stored = await repository.GetAsync(today.Year, today.Month);
+        Assert.ContainsSingle(stored.Categories);
+        Assert.AreEqual("A category with that name already exists this month.", viewModel.StatusText);
+    }
+
+    [TestMethod]
+    public async Task DeleteCategoryAsync_RemovesCategoryAndRefreshes()
+    {
+        var today = DateTime.Today;
+        var seed = new MonthlyBudgetCategories(
+            today.Year,
+            today.Month,
+            [
+                new BudgetCategory("Groceries", new MoneyAmount(5000m), isEssential: true),
+                new BudgetCategory("Transport", new MoneyAmount(2000m), isEssential: false)
+            ]);
+        var repository = new StatefulMonthlyBudgetCategoryRepository(seed);
+        var viewModel = new BudgetsViewModel(repository, new ListingTransactionApplicationService([]));
+        await viewModel.LoadAsync();
+
+        await viewModel.DeleteCategoryAsync("Groceries");
+
+        var stored = await repository.GetAsync(today.Year, today.Month);
+        var remaining = Assert.ContainsSingle(stored.Categories);
+        Assert.AreEqual("Transport", remaining.Name);
+        var item = Assert.ContainsSingle(viewModel.Items);
+        Assert.AreEqual("Transport", item.CategoryName);
+    }
+
     private static BudgetsViewModel NewViewModel(
         RecordingMonthlyBudgetCategoryRepository? budgetRepository = null,
         ListingTransactionApplicationService? applicationService = null) =>
@@ -187,6 +269,37 @@ public sealed class BudgetsViewModelTests
             LastMonth = month;
 
             return Task.FromResult(budgetCategories);
+        }
+    }
+
+    private sealed class StatefulMonthlyBudgetCategoryRepository : IMonthlyBudgetCategoryRepository
+    {
+        private readonly Dictionary<(int Year, int Month), MonthlyBudgetCategories> store = [];
+
+        public StatefulMonthlyBudgetCategoryRepository(params MonthlyBudgetCategories[] seed)
+        {
+            foreach (var item in seed)
+            {
+                store[(item.Year, item.Month)] = item;
+            }
+        }
+
+        public Task SaveAsync(
+            MonthlyBudgetCategories budgetCategories,
+            CancellationToken cancellationToken = default)
+        {
+            store[(budgetCategories.Year, budgetCategories.Month)] = budgetCategories;
+            return Task.CompletedTask;
+        }
+
+        public Task<MonthlyBudgetCategories> GetAsync(
+            int year,
+            int month,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(store.TryGetValue((year, month), out var existing)
+                ? existing
+                : MonthlyBudgetCategories.Empty(year, month));
         }
     }
 

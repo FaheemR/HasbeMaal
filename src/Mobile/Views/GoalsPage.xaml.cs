@@ -76,6 +76,41 @@ public partial class GoalsPage : ContentPage
 		}
 	}
 
+	private async void OnUpdateGoalClicked(object? sender, EventArgs e)
+	{
+		if (sender is not Button { BindingContext: GoalItemViewModel item })
+		{
+			return;
+		}
+
+		try
+		{
+			var input = await DisplayPromptAsync(
+				"Update saved amount",
+				$"How much have you saved for \"{item.Name}\"?",
+				accept: "Save",
+				cancel: "Cancel",
+				keyboard: Keyboard.Numeric);
+
+			if (string.IsNullOrWhiteSpace(input))
+			{
+				return;
+			}
+
+			if (!TryReadDecimal(input, out var savedAmount) || savedAmount < 0m)
+			{
+				await DisplayAlertAsync("Update saved amount", "Enter a valid amount.", "OK");
+				return;
+			}
+
+			await viewModel.UpdateGoalSavedAmountAsync(item.Id, savedAmount);
+		}
+		catch (Exception exception)
+		{
+			logger.LogSanitizedException(nameof(GoalsPage), nameof(OnUpdateGoalClicked), exception);
+		}
+	}
+
 	private async void OnAddEmergencyFundClicked(object? sender, EventArgs e)
 	{
 		if (!TryReadDecimal(EmergencyEssentialsEntry.Text, out var essentials) || essentials <= 0m)

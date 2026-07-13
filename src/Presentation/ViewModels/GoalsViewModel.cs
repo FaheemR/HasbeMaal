@@ -174,6 +174,35 @@ public sealed class GoalsViewModel : ViewModelBase
         await LoadAsync(cancellationToken);
     }
 
+    public async Task UpdateGoalSavedAmountAsync(
+        Guid id,
+        decimal savedAmount,
+        CancellationToken cancellationToken = default)
+    {
+        if (savedAmount < 0m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(savedAmount));
+        }
+
+        var goals = await goalRepository.ListAsync(cancellationToken);
+        var existing = goals.FirstOrDefault(goal => goal.Id == id);
+        if (existing is null)
+        {
+            return;
+        }
+
+        var updated = new FinancialGoal(
+            existing.Id,
+            existing.Name,
+            existing.TargetAmount,
+            new MoneyAmount(savedAmount, existing.TargetAmount.Currency),
+            existing.TargetDate,
+            existing.Purpose);
+
+        await goalRepository.SaveAsync(updated, cancellationToken);
+        await LoadAsync(cancellationToken);
+    }
+
     private bool CanAddGoal()
     {
         return !string.IsNullOrWhiteSpace(NewGoalName)

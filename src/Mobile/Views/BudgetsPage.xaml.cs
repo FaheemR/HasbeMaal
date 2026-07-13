@@ -71,4 +71,21 @@ public partial class BudgetsPage : ContentPage
 			throw;
 		}
 	}
+
+	private async void OnDeleteCategoryClicked(object? sender, EventArgs e)
+	{
+		if (sender is not Button { BindingContext: BudgetProgressItemViewModel item })
+		{
+			return;
+		}
+
+		try
+		{
+			await viewModel.DeleteCategoryAsync(item.CategoryName);
+		}
+		catch (Exception exception)
+		{
+			logger.LogSanitizedException(nameof(BudgetsPage), nameof(OnDeleteCategoryClicked), exception);
+		}
+	}
 }
