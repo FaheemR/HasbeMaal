@@ -79,6 +79,7 @@ public static class MauiProgram
 				services.GetRequiredService<ILogger<LoggingEncryptedStore>>()));
 		builder.Services.AddSingleton<ITransactionRepository, EncryptedTransactionRepository>();
 		builder.Services.AddSingleton<IMonthlyBudgetCategoryRepository, EncryptedMonthlyBudgetCategoryRepository>();
+		builder.Services.AddSingleton<IFinancialGoalRepository, EncryptedFinancialGoalRepository>();
 		builder.Services.AddSingleton<ISmsImportWatermarkStore, EncryptedSmsImportWatermarkStore>();
 		builder.Services.AddSingleton<ISelectedBanksStore, EncryptedSelectedBanksStore>();
 		builder.Services.AddSingleton<ISmsTransactionImporter, SmsTransactionImporter>();
@@ -95,6 +96,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<ManualTransactionEntryViewModel>();
 		builder.Services.AddTransient<TransactionsViewModel>();
 		builder.Services.AddTransient<BudgetsViewModel>();
+		builder.Services.AddTransient<GoalsViewModel>();
 		builder.Services.AddTransient<SmsPermissionConsentViewModel>();
 		builder.Services.AddTransient<SmsImportViewModel>();
 		builder.Services.AddTransient<BankSelectionViewModel>();

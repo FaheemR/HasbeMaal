@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HasbeMaal.Presentation.ViewModels;assembly=HasbeMaal.Presentation"
              x:Class="HasbeMaal.Mobile.Views.GoalsPage"
+             x:DataType="vm:GoalsViewModel"
              SafeAreaEdges="Container, Container, Container, SoftInput"
              Title="Goals">
     <ScrollView>
@@ -9,53 +11,122 @@
             <VerticalStackLayout Style="{StaticResource PageHeaderLayout}">
                 <Label Text="SCENARIOS" Style="{StaticResource EyebrowLabel}" />
                 <Label Text="Goals" Style="{StaticResource PageTitle}" />
-                <Label Text="Longer-horizon planning without mixing it into daily spending." Style="{StaticResource PageSubtitle}" />
+                <Label Text="Plan for milestones and reserves without mixing them into daily spending." Style="{StaticResource PageSubtitle}" />
             </VerticalStackLayout>
 
             <Border Style="{StaticResource HeroCardBorder}">
-                <VerticalStackLayout Spacing="14">
-                    <Label Text="GOAL OPERATING ROOM" Style="{StaticResource EyebrowLabel}" />
-                    <Label Text="No goals yet" Style="{StaticResource SectionTitle}" />
-                    <Label Text="Emergency fund, education, family support, and long-term scenarios will be tracked here." Style="{StaticResource MutedLabel}" />
-                    <Border Style="{StaticResource GlassPanelBorder}">
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="Private by design" Style="{StaticResource ChipLabel}" />
-                            <Label Text="Goals will use local summaries and app-defined categories, not raw transaction trails." Style="{StaticResource MutedLabel}" />
-                        </VerticalStackLayout>
+                <VerticalStackLayout Style="{StaticResource CardContentLayout}" Spacing="12">
+                    <Label Text="PLAN A GOAL" Style="{StaticResource EyebrowLabel}" />
+                    <Label Text="Milestone or reserve" Style="{StaticResource SectionTitle}" />
+                    <Label Text="For example, your child's school admission or a long-term target. We work out how much to set aside each month." Style="{StaticResource MutedLabel}" />
+
+                    <Entry Placeholder="Goal name (e.g. School admission)" Text="{Binding NewGoalName}" />
+                    <Entry Placeholder="Purpose (optional)" Text="{Binding NewGoalPurpose}" />
+                    <Entry Placeholder="Target amount" Keyboard="Numeric" Text="{Binding NewGoalTargetAmount}" />
+                    <Entry Placeholder="Already saved (optional)" Keyboard="Numeric" Text="{Binding NewGoalCurrentAmount}" />
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Target date" Style="{StaticResource ChipLabel}" />
+                        <DatePicker Date="{Binding NewGoalTargetDate}" Format="dd MMM yyyy" />
+                    </VerticalStackLayout>
+
+                    <Button Text="Add goal" Command="{Binding AddGoalCommand}" />
+
+                    <Border Style="{StaticResource GlassPanelBorder}"
+                            IsVisible="{Binding HasStatus}">
+                        <Label Text="{Binding StatusText}" Style="{StaticResource ChipLabel}" />
                     </Border>
                 </VerticalStackLayout>
             </Border>
 
-            <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*" RowSpacing="12" ColumnSpacing="12">
-                <Border Style="{StaticResource GlassPanelBorder}">
-                    <VerticalStackLayout Spacing="8">
-                        <Label Text="RESERVE" Style="{StaticResource EyebrowLabel}" />
-                        <Label Text="Emergency fund" Style="{StaticResource SectionTitle}" />
-                        <Label Text="Reserve planning" Style="{StaticResource ChipLabel}" />
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Style="{StaticResource CardContentLayout}" Spacing="12">
+                    <Label Text="QUICK SETUP" Style="{StaticResource EyebrowLabel}" />
+                    <Label Text="Emergency fund" Style="{StaticResource SectionTitle}" />
+                    <Label Text="Enter your essential monthly expenses. We target a months-of-cover reserve so you are ready for surprises." Style="{StaticResource MutedLabel}" />
+
+                    <Entry x:Name="EmergencyEssentialsEntry" Placeholder="Essential monthly expenses" Keyboard="Numeric" />
+                    <Entry x:Name="EmergencyMonthsEntry" Placeholder="Months of cover (e.g. 6)" Keyboard="Numeric" Text="6" />
+                    <Entry x:Name="EmergencyCurrentEntry" Placeholder="Already saved (optional)" Keyboard="Numeric" />
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Target date" Style="{StaticResource ChipLabel}" />
+                        <DatePicker x:Name="EmergencyTargetDatePicker" Format="dd MMM yyyy" />
+                    </VerticalStackLayout>
+
+                    <Button Text="Add emergency fund"
+                            Style="{StaticResource SecondaryButton}"
+                            Clicked="OnAddEmergencyFundClicked" />
+
+                    <Border Style="{StaticResource GlassPanelBorder}"
+                            x:Name="EmergencyStatusBorder"
+                            IsVisible="False">
+                        <Label x:Name="EmergencyStatusLabel" Style="{StaticResource ChipLabel}" />
+                    </Border>
+                </VerticalStackLayout>
+            </Border>
+
+            <VerticalStackLayout Spacing="12">
+                <Label Text="YOUR GOALS" Style="{StaticResource EyebrowLabel}" />
+
+                <Border Style="{StaticResource LoadingStateBorder}"
+                        IsVisible="{Binding IsLoading}">
+                    <HorizontalStackLayout Spacing="12">
+                        <ActivityIndicator IsRunning="{Binding IsLoading}" VerticalOptions="Center" />
+                        <Label Text="Loading goals" Style="{StaticResource ChipLabel}" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource EmptyAffordanceBorder}"
+                        IsVisible="{Binding IsEmpty}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="GOAL OPERATING ROOM" Style="{StaticResource EyebrowLabel}" />
+                        <Label Text="No goals yet" Style="{StaticResource SectionTitle}" />
+                        <Label Text="Add an emergency fund or a milestone above and it will appear here with a monthly set-aside." Style="{StaticResource MutedLabel}" />
                     </VerticalStackLayout>
                 </Border>
-                <Border Grid.Column="1" Style="{StaticResource CardBorder}">
-                    <VerticalStackLayout Spacing="8">
-                        <Label Text="FUTURE" Style="{StaticResource EyebrowLabel}" />
-                        <Label Text="Education" Style="{StaticResource SectionTitle}" />
-                        <Label Text="Future expenses" Style="{StaticResource ChipLabel}" />
-                    </VerticalStackLayout>
-                </Border>
-                <Border Grid.Row="1" Style="{StaticResource AccentPanelBorder}">
-                    <VerticalStackLayout Spacing="8">
-                        <Label Text="FAMILY" Style="{StaticResource EyebrowLabel}" />
-                        <Label Text="Family support" Style="{StaticResource SectionTitle}" />
-                        <Label Text="Recurring help" Style="{StaticResource ChipLabel}" />
-                    </VerticalStackLayout>
-                </Border>
-                <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource GlassPanelBorder}">
-                    <VerticalStackLayout Spacing="8">
-                        <Label Text="HORIZON" Style="{StaticResource EyebrowLabel}" />
-                        <Label Text="Long-term" Style="{StaticResource SectionTitle}" />
-                        <Label Text="Scenario planning" Style="{StaticResource ChipLabel}" />
-                    </VerticalStackLayout>
-                </Border>
-            </Grid>
+
+                <VerticalStackLayout Spacing="12"
+                                     BindableLayout.ItemsSource="{Binding Items}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:GoalItemViewModel">
+                            <Border Style="{StaticResource CardBorder}">
+                                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <VerticalStackLayout Spacing="2">
+                                            <Label Text="{Binding Name}" Style="{StaticResource SectionTitle}" FontSize="16" LineBreakMode="TailTruncation" />
+                                            <Label Text="{Binding Purpose}" Style="{StaticResource MutedLabel}" LineBreakMode="TailTruncation" />
+                                        </VerticalStackLayout>
+                                        <Border Grid.Column="1" Style="{StaticResource PillBorder}">
+                                            <Label Text="{Binding StatusText}" Style="{StaticResource ChipLabel}" />
+                                        </Border>
+                                    </Grid>
+
+                                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <Label Text="{Binding CurrentText}" Style="{StaticResource MutedLabel}" />
+                                        <Label Grid.Column="1" Text="{Binding TargetText}" Style="{StaticResource MutedLabel}" HorizontalTextAlignment="End" />
+                                    </Grid>
+
+                                    <ProgressBar Grid.Row="2" Progress="{Binding Progress}" HeightRequest="6" />
+
+                                    <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <Label Text="{Binding RemainingText}" Style="{StaticResource MutedLabel}" />
+                                        <Label Grid.Column="1" Text="{Binding MonthlyContributionText}" Style="{StaticResource ChipLabel}" HorizontalTextAlignment="End" />
+                                    </Grid>
+
+                                    <Grid Grid.Row="4" ColumnDefinitions="*,Auto">
+                                        <Label Text="{Binding TargetDateText}" Style="{StaticResource MutedLabel}" VerticalOptions="Center" />
+                                        <Button Grid.Column="1"
+                                                Text="Remove"
+                                                Style="{StaticResource SecondaryButton}"
+                                                Clicked="OnDeleteGoalClicked" />
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

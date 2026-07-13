@@ -10,7 +10,23 @@ public sealed record FinancialGoal
         MoneyAmount currentAmount,
         DateOnly targetDate,
         string purpose)
+        : this(Guid.NewGuid(), name, targetAmount, currentAmount, targetDate, purpose)
     {
+    }
+
+    public FinancialGoal(
+        Guid id,
+        string name,
+        MoneyAmount targetAmount,
+        MoneyAmount currentAmount,
+        DateOnly targetDate,
+        string purpose)
+    {
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Goal id is required.", nameof(id));
+        }
+
         if (string.IsNullOrWhiteSpace(name))
         {
             throw new ArgumentException("Goal name is required.", nameof(name));
@@ -29,12 +45,15 @@ public sealed record FinancialGoal
             throw new ArgumentException("Goal purpose is required.", nameof(purpose));
         }
 
+        Id = id;
         Name = name.Trim();
         TargetAmount = targetAmount;
         CurrentAmount = currentAmount;
         TargetDate = targetDate;
         Purpose = purpose.Trim();
     }
+
+    public Guid Id { get; }
 
     public string Name { get; }
 

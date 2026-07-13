@@ -128,6 +128,54 @@ public sealed class FinancialGoalTests
         Assert.ThrowsExactly<ArgumentException>(() => NewGoal(purpose: purpose!));
     }
 
+    [TestMethod]
+    public void Constructor_WithoutId_AssignsNonEmptyId()
+    {
+        var goal = NewGoal();
+
+        Assert.AreNotEqual(Guid.Empty, goal.Id);
+    }
+
+    [TestMethod]
+    public void Constructor_WithoutId_AssignsUniqueIdPerGoal()
+    {
+        var first = NewGoal();
+        var second = NewGoal();
+
+        Assert.AreNotEqual(first.Id, second.Id);
+    }
+
+    [TestMethod]
+    public void Constructor_WithId_PreservesProvidedId()
+    {
+        var id = Guid.NewGuid();
+
+        var goal = new FinancialGoal(
+            id,
+            "Emergency fund",
+            new MoneyAmount(150000m),
+            new MoneyAmount(25000m),
+            new DateOnly(2027, 6, 30),
+            "Household reserve");
+
+        Assert.AreEqual(id, goal.Id);
+    }
+
+    [TestMethod]
+    public void Constructor_EmptyId_Throws()
+    {
+        var exception = Assert.ThrowsExactly<ArgumentException>(() =>
+            new FinancialGoal(
+                Guid.Empty,
+                "Goal",
+                new MoneyAmount(1000m),
+                new MoneyAmount(0m),
+                new DateOnly(2026, 12, 31),
+                "Purpose"));
+
+        Assert.AreEqual("id", exception.ParamName);
+    }
+
     private static FinancialGoal NewGoal(
         string name = "Goal",
         MoneyAmount? targetAmount = null,
